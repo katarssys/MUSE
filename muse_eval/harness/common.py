@@ -8,7 +8,7 @@ class Observations:
         self.claims = []
 
     def read(self, name):
-        result = self.context.tools.call(name, {})
+        result = self.context.tools.call(name, {"resource_id": self.context.initial_state.get("resource_id", "campaign_A")})
         if result.success:
             ref = result.metadata["evidence_ref"]
             for metric, value in result.data.items():

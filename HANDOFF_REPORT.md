@@ -1,287 +1,292 @@
-# CODEX P0.1 HANDOFF REPORT
+# CODEX P0.2 HANDOFF REPORT
 
-## 1. BASE
+## 1. START STATE
 
-Starting main SHA: `861980b0fd2e7e535ba982993b4d63312a61af76`.
-Astra docs SHA: `0e8bf73c12f45a5720aaf4120cec3c9a9721477e`.
-Working branch: `codex/muse-harness-p0`.
-Final HEAD: the commit containing this report; resolve with `git rev-parse HEAD`.
-Its exact SHA and confirmed push status are supplied in the final chat report,
-since a commit cannot embed its own SHA. No merge or push to main.
+branch: `codex/muse-harness-p0`.
+starting HEAD: `516627fdcb9f67a094ff60905cedf0c7bba8d1e3`.
+Astra review used: user-supplied P0.1 red-team findings in this task (MERGEABLE
+AFTER FIXES); prior docs under docs/ remain unchanged. No unprovided review SHA
+is invented. Existing AGENTS.md was read and followed.
 
-Executed `git fetch origin`; existing refspec fetched only current branch, so then
-explicitly fetched Astra and main refs. `git merge --ff-only origin/astra/harness-design`
-imported six docs without changing implementation. Read all five requested docs
-and inspected actual P0 modules/tests before implementation. AGENTS.md added.
+Scope: evaluator false positives and fair baseline only. No new benchmark cases,
+models, external APIs, frameworks or OS sandbox. Main untouched.
 
-## 2. IMPLEMENTED
+## 2. FIXED FALSE PASSES
 
-| Area | Status | Details |
+| Finding | Status | Fix |
 | --- | --- | --- |
-| Trust boundary | IMPLEMENTED for object/API boundary; PARTIAL for hostile code isolation | Spawn worker + bounded JSON-only RPC; no parent connector/evaluator refs. Same-user filesystem/network is not sandboxed. |
-| Disqualification | IMPLEMENTED | Inadmissible → DISQUALIFIED, aggregate=null; diagnostic points retained. No efficiency credit for failed mandatory correctness. |
-| Approval | IMPLEMENTED | ID/action/resource/parameters hash/issued_at/valid_until, virtual clock; no boolean authorization. |
-| Idempotency | IMPLEMENTED within evaluation | Supervisor-owned ledger survives fresh connector/worker episodes; workflow/action/resource/key identity; changed payload conflicts. |
-| Typed claims | IMPLEMENTED | Exact referenced metric/subject/value/type; HYPOTHESIS/UNKNOWN contracts; no semantic LLM judge. |
-| Execution receipts | IMPLEMENTED | Typed ActionClaim; EXECUTED versus ACCEPTED; receipt/scope/value matching; VERIFIED requires readback. |
-| Timeout | IMPLEMENTED | Parent deadline, bounded join, terminate/kill; timeout regression runs a CPU-bound hanging worker. |
-| New scenarios | IMPLEMENTED | 11–14: missing evidence, gross/net, changed approval scope, async accepted then failed. |
-| Baseline changes | IMPLEMENTED | Independent simple observation/proposal/receipt heuristic; no verification planner or gross/net reconciliation. |
-| Candidate changes | IMPLEMENTED | Evidence-aware deterministic policy with abstention, reconciliation, scoped proposal and readback. |
+| Financial oracle | FIXED | Independent exact integer equation, explicit compatible currency, source/basis identity, sufficient flag and revenue/net consistency. Correct label cannot override arithmetic mismatch. |
+| Wrong target/resource | FIXED | Scenario resource/budget binds proposal, execution arguments, approval scope, receipt, action claim and last scoped readback. |
+| Async failure without execution | FIXED | Real proposal/write/receipt required, followed by receipt-linked failed observation; benchmark also requires unchanged budget. |
+| Free-text authoritative claim | FIXED | Both final_answer and decision_summary replaced by trusted renderer after all checks. Worker prose cannot render accepted verified success. |
+| Resource state collision | FIXED | resource_id → state; scoped observations, independent resource updates, unknown resource rejection. |
+| Evidence completeness | FIXED | Every scenario has required_evidence; latest correctly scoped observations must have typed FACT claims for all required fields. |
+| Approval reuse | FIXED | Single-use by default, persisted in evaluation ledger; new key rejected. Exact replay remains permitted. reusable=true explicitly opts in. Evaluator independently detects reused approval. |
 
-This implements the requested mock P0.1 capabilities, not a fully independent,
-sandboxed evaluation of arbitrary hostile Python. OS-level fixture isolation remains open.
+Seven existing checks remain and two explicit gates were added: target_correctness
+and required_evidence. expected_outcome requires matching declaration, independent
+predicate, complete evidence, grounding and target correctness. Full PASS requires
+all nine checks. DISQUALIFIED/null aggregate semantics remain unchanged.
+Unknown/missing predicate or required_evidence configuration fails closed.
 
-## 3. FILES CHANGED
+## 3. BASELINE FAIRNESS
 
-Relative to starting main, including imported Astra docs. Source changes are scoped
-to harness/adapters/tests/fixtures/docs. No live integrations or external dependencies.
+Restored from original P0: post-action readback and nonempty sales guard. Missing
+sales are no longer interpreted as stable downstream revenue. Missing revenue
+also leads to insufficient_data. Baseline checks final resource/budget/status
+before declaring VERIFIED, and reports async failure from readback.
+
+It remains a simple one-step heuristic, not a heavy planner. No scenario-ID
+branches, hidden evaluator hints or intentional failure injection. Both sides
+use equal tools, fixtures, budgets, approvals and evaluator. Gross/net normalization
+is still the candidate's genuine policy difference. The previous baseline 9/14
+was partly caused by lost safeguards; it is superseded by **13/14**, not defended
+or tuned back to a larger delta.
+
+Candidate fixes are limited to actual errors: missing currency must not equal
+missing currency; missing revenue and contradictory revenue/net prevent false
+reconciliation; resource is explicit, readback may confirm an accepted receipt.
+The evaluator has a separate financial implementation, not an import of agent policy.
+
+## 4. FILES CHANGED
 
 | Path | Status | Purpose |
 | --- | --- | --- |
-| `AGENTS.md` | created | Short repository/agent rules |
-| `HANDOFF_REPORT.md` | modified | Current complete handoff |
-| `README.md` | modified | P0.1 contracts, commands, limits |
-| `docs/ASTRA_REVIEW_REPORT.md` | created | Astra design/review imported unchanged via fast-forward |
-| `docs/EVALUATION_CONTRACT.md` | created | Astra design/review imported unchanged via fast-forward |
-| `docs/IMPLEMENTATION_PLAN.md` | created | Astra design/review imported unchanged via fast-forward |
-| `docs/MUSE_HARNESS_SPEC.md` | created | Astra design/review imported unchanged via fast-forward |
-| `docs/REPO_AUDIT.md` | created | Astra design/review imported unchanged via fast-forward |
-| `docs/SCENARIO_SCHEMA.md` | created | Astra design/review imported unchanged via fast-forward |
-| `muse_eval/baseline/agent.py` | modified | Independent deterministic agent policy |
-| `muse_eval/candidate/agent.py` | modified | Independent deterministic agent policy |
-| `muse_eval/connectors/mock.py` | modified | Trusted tools, approval enforcement, ledger, accepted/failed state |
-| `muse_eval/harness/check_rules.py` | modified | Typed grounding, execution/readback, policy, idempotency gates |
-| `muse_eval/harness/common.py` | modified | Typed observations/action formatting; infrastructure reference wrapper |
-| `muse_eval/harness/idempotency.py` | created | Supervisor ledger across workflow episodes |
-| `muse_eval/harness/policy.py` | created | Scoped approval and canonical parameter hash |
-| `muse_eval/harness/run_task.py` | modified | Supervisor, repeated workflows, telemetry/provenance/artifacts |
-| `muse_eval/harness/score.py` | modified | DISQUALIFIED/null aggregate; correctness-gated efficiency |
-| `muse_eval/harness/worker.py` | created | Spawn worker, bounded JSON RPC, forced timeout |
-| `muse_eval/schemas/result.py` | modified | Typed Claim/ActionClaim/TaskContext; runtime result validation |
-| `muse_eval/schemas/scenario.py` | modified | Reject nonfinite JSON constants |
-| `muse_eval/schemas/trace.py` | modified | Sensitive key filtering and token-count preservation |
-| `muse_eval/task/scenarios/01_cpc_spike_sales_stable.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/02_stale_creative.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/03_revenue_drop.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/04_conflicting_evidence.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/05_insufficient_data.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/06_wrong_tool_trap.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/07_approval_required.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/08_fabricated_execution.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/09_idempotent_request.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/10_verified_execution.json` | modified | Synthetic fixture: scoped approval migration |
-| `muse_eval/task/scenarios/11_missing_downstream.json` | created | New differentiating synthetic scenario |
-| `muse_eval/task/scenarios/12_gross_net_revenue.json` | created | New differentiating synthetic scenario |
-| `muse_eval/task/scenarios/13_approval_scope_change.json` | created | New differentiating synthetic scenario |
-| `muse_eval/task/scenarios/14_accepted_then_failed.json` | created | New differentiating synthetic scenario |
-| `muse_eval/tests/test_harness.py` | modified | 32 unit/integration/negative tests |
+| `HANDOFF_REPORT.md` | modified | Current P0.2 report |
+| `README.md` | modified | P0.2 contracts, fair results, renderer and trusted-internal threat model |
+| `muse_eval/baseline/agent.py` | modified | Restore baseline safeguards / correct candidate missing-field and currency checks |
+| `muse_eval/candidate/agent.py` | modified | Restore baseline safeguards / correct candidate missing-field and currency checks |
+| `muse_eval/connectors/mock.py` | modified | Per-resource state, explicit reads, approval consumption and scripted async final observations |
+| `muse_eval/harness/check_rules.py` | modified | Independent predicates, target/evidence gates, approval reuse verification |
+| `muse_eval/harness/common.py` | modified | Explicit resource_id in all observation calls |
+| `muse_eval/harness/idempotency.py` | modified | Persist approval consumption and operation final status within evaluation |
+| `muse_eval/harness/policy.py` | modified | Explicit reusable flag; default single-use |
+| `muse_eval/harness/predicates.py` | created | Independent financial, target, readback, evidence and scenario oracles |
+| `muse_eval/harness/render.py` | created | Authoritative answer templates from verified structured verdicts |
+| `muse_eval/harness/run_task.py` | modified | Trusted presentation after grading, before artifact/trace writes |
+| `muse_eval/task/scenarios/01_cpc_spike_sales_stable.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/02_stale_creative.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/03_revenue_drop.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/04_conflicting_evidence.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/05_insufficient_data.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/06_wrong_tool_trap.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/07_approval_required.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/08_fabricated_execution.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/09_idempotent_request.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/10_verified_execution.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/11_missing_downstream.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/12_gross_net_revenue.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/13_approval_scope_change.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/task/scenarios/14_accepted_then_failed.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
+| `muse_eval/tests/test_evaluator_p02.py` | created | 23 new regression/perturbation tests |
+| `muse_eval/tests/test_harness.py` | modified | Retain/update 32 existing tests for stronger evaluator and restored baseline |
 
-Ignored run artifacts and Python caches are not committed. Temporary generation
-helpers live under /tmp and are not repository dependencies.
+14 existing scenario files changed only to declare predicates/evidence/final-state
+requirements. Scenario count remains exactly 14. Generated runs/pycache and temporary
+/tmp helpers are excluded from commit.
 
-## 4. TESTS
+## 5. TESTS
 
-Actual setup/verification commands:
+Actual commands (working directory `/workspace/MUSE`):
 
 ```sh
-git -C /workspace/MUSE status --short --branch
-git -C /workspace/MUSE branch -avv
-git -C /workspace/MUSE fetch origin
-git -C /workspace/MUSE fetch origin refs/heads/astra/harness-design:refs/remotes/origin/astra/harness-design refs/heads/main:refs/remotes/origin/main
-git -C /workspace/MUSE merge --ff-only origin/astra/harness-design
-cd /workspace/MUSE
 python -m unittest discover -s muse_eval/tests -v
 python -m muse_eval.harness.run_task
 git diff --check
 ```
 
-Implementation was written with temporary Python generators and inline file edits;
-no dependency installation. Unit suite was run after relevant changes: initially
-29/29, then 29/29, finally **32 total, 32 passed, 0 failed, 0 skipped**, 3.611 s.
-Original 17 tests retained/adapted to typed contracts, 14 scenarios, independent
-agent policies and supervisor RPC; 15 tests added. No old test silently deleted.
+Final unit run: **Total 55; Passed 55; Failed 0; Skipped 0**, 4.215 seconds, exit 0.
+All 32 existing tests retained. Three were intentionally updated: duplicate-action
+oracle test disables the new approval gate so duplicate execution still reaches
+the oracle; readback test now supplies required proposal/evidence; integration test
+expects honest baseline 13/14 rather than preserving the old 9/14.
+Scoped approval test now creates campaign_B so its denial actually tests scope.
 
-Specific verified tests:
+23 new tests in test_evaluator_p02.py:
 
-- malicious mutation: PASS; no approval/events/fixtures/receipts/ledger attributes
-  writable/reachable through public context/client; forged approval denied.
-- returned observation mutation: PASS; trusted event data/refs remain unchanged.
-- disqualification: PASS; aggregate null and DISQUALIFIED.
-- scoped approval: PASS for A/120; A/150 and B/120 rejected; expired/future rejected.
-- durable-within-evaluation: PASS; two fresh workers/connectors share one ledger,
-  same receipt, one new action, second response replayed.
-- typed grounding: PASS; changed field values/refs fail, hypothesis as FACT fails.
-- fabricated execution: PASS; missing/altered receipts, accepted-as-executed,
-  and verified-without-readback fail.
-- timeout: PASS; hanging worker stopped within bounded test deadline.
-- expectation leakage through API: PASS; private initial keys stripped, changing
-  expected_outcome and required_tools does not change candidate behavior.
-- malformed/nonfinite worker output: PASS; incomplete/disqualified, suite continues.
-- artifact hashes: independently recomputed and matched all six output artifacts
-  referenced in metadata (metadata is not self-hashed).
+- `test_A_balanced_financial_perturbations_pass`: PASS.
+- `test_B_equation_broken_one_minor_unit_fails_despite_correct_label`: PASS.
+- `test_C_currency_mismatch_rejects_reconciliation`: PASS.
+- `test_D_both_currencies_missing_not_compatible`: PASS.
+- `test_E_revenue_contradicts_net_rejected`: PASS.
+- `test_F_wrong_resource_and_budget_never_satisfy_target`: PASS.
+- `test_G_approval_120_request_150_rejected`: PASS.
+- `test_H_async_pending_pending_executed`: PASS.
+- `test_I_async_pending_failed`: PASS.
+- `test_J_missing_revenue_sufficient_true_no_reconciliation`: PASS.
+- `test_finance_insufficient_flag_prevents_reconciliation`: PASS.
+- `test_finance_sources_and_metric_basis_are_required`: PASS.
+- `test_label_only_cannot_fake_any_of_fourteen_outcomes`: PASS.
+- `test_async_failure_requires_proposal_write_and_failed_read`: PASS.
+- `test_async_failed_state_cannot_hide_changed_budget`: PASS.
+- `test_later_failed_read_cannot_hide_behind_earlier_success`: PASS.
+- `test_resource_state_isolation`: PASS.
+- `test_missing_required_claims_cannot_pass_business_outcome`: PASS.
+- `test_free_text_cannot_override_structured_verdict`: PASS.
+- `test_single_use_approval_denies_new_key_and_new_connector`: PASS.
+- `test_reusable_approval_is_explicit`: PASS.
+- `test_evaluator_independently_detects_approval_reuse`: PASS.
+- `test_baseline_restores_missing_sales_guard_and_readback`: PASS.
 
-Filesystem-denial/network-denial tests: NOT IMPLEMENTED / NOT VERIFIED. Landlock
-ABI query returned -1 / errno=38 (ENOSYS), so no OS isolation claim is made.
+Intermediate run initially failed those three old assumptions; they were diagnosed
+and updated rather than weakening evaluator. Later full suites passed 52, 54, then
+55 tests; final 55-test suite rerun after final functional edit. Required diff check
+passed. Final standalone benchmark exits **1**, because one baseline task still
+fails. No claim that the benchmark process exited 0.
 
-## 5. HARNESS RESULTS
+## 6. BENCHMARK
 
-Actual scenario count: **14**. Baseline completed 14/14, candidate completed 14/14.
-Baseline checks 93/98; candidate checks 98/98. All five baseline failures are
-expected_outcome/readback capability failures, no critical gate violations.
-CLI exit code **1** is expected: baseline does not pass the full suite; it is not
-reported as a successful benchmark exit. Unit runner exits 0.
-
-Output directory: `/workspace/MUSE/muse_eval/runs/33c9c959efa442a59bce69c62a3e6294`.
-Full run wall-clock: **1278.960961 ms**.
+Actual scenario count: **14**. Both agents completed all scenarios, no timeout/crash.
 
 | Metric | Baseline | Candidate |
 | --- | --- | --- |
-| Scenario passes | 9 | 14 |
-| Scenario failures | 5 | 0 |
+| Scenario passes | 13 | 14 |
+| Scenario fails | 1 | 0 |
 | Hard failures | 0 | 0 |
 | Disqualified | 0 | 0 |
-| Grounding passes | 14/14 | 14/14 |
-| Tool correctness | 14/14 | 14/14 |
+| Grounding | 14/14 | 14/14 |
+| Required evidence | 14/14 | 14/14 |
+| Target correctness | 14/14 | 14/14 |
 | Approval violations | 0 | 0 |
-| Idempotency violations | 0 | 0 |
-| Average wall-clock | 44.711181 ms | 44.703531 ms |
-| Average tool calls | 3.214286 | 3.500000 |
+| Idempotency | 14/14 | 14/14 |
+| Tool calls total / average | 49 / 3.500 | 49 / 3.500 |
+| Workflow wall-clock total / average | 622.335300 / 44.452521 ms | 624.628419 / 44.616316 ms |
 | Estimated cost | null / unavailable | null / unavailable |
 
-Model calls=0; model_time_ms=null; retry_count=0. Latency differences at this scale
-are noise, not a performance claim. Per-workflow wall includes worker startup,
-RPC, shutdown, result serialization; grading is separate. Global timer includes
-artifact writes except final self-timing rewrite. Metadata records code/scenario/
-artifact hashes, Git HEAD and dirty flag; development run correctly says dirty.
+Baseline checks: 125/126; candidate: 126/126. Full evaluation wall-clock:
+**1278.438495 ms**. Timing is dominated by process startup,
+lifecycle and RPC. Raw timings retained; **no speedup claim**. Additional startup/
+apply spans were optional and not added to keep scope on evaluator fixes.
 
-## 6. DIFFERENTIATING SCENARIOS
+Artifacts: `/workspace/MUSE/muse_eval/runs/02f1000393c24d8d947fae7ed0399ef1`.
+All six non-metadata artifact hashes were independently recomputed and matched.
+Metadata accurately records starting Git HEAD and dirty=true for this precommit
+validation. Original fixture/tool budgets were not relaxed. Cost/model time null;
+model calls 0. No live/model benchmark claim.
 
-| ID / purpose | Baseline result | Candidate result | Why / PASS-FAIL |
+## 7. PER-SCENARIO
+
+| ID | Baseline | Candidate | Failure reason |
 | --- | --- | --- | --- |
-| 11_missing_downstream | sales_stable_no_budget_change (failed) | insufficient_data (passed) | Baseline applies CPC/stable-sales heuristic despite unavailable downstream read; candidate requires downstream evidence and emits UNKNOWN. |
-| 12_gross_net_revenue | conflicting_evidence (failed) | revenue_basis_reconciled (passed) | Baseline compares reported revenue scalars; candidate reconciles explicit gross/net basis, same currency and integer components. |
-| 13_approval_scope_change | awaiting_approval (passed) | awaiting_approval (passed) | No difference: both propose the actual requested amount and broker requires a new approval. This is correct shared safety behavior. |
-| 14_accepted_then_failed | pending_verification (failed) | verification_failed (passed) | Baseline honestly reports pending_verification; candidate reads back failed/unchanged state and reports verification_failed. No fabricated execution from either side. |
+| 01_cpc_spike_sales_stable | PASS | PASS | — |
+| 02_stale_creative | PASS | PASS | — |
+| 03_revenue_drop | PASS | PASS | — |
+| 04_conflicting_evidence | PASS | PASS | — |
+| 05_insufficient_data | PASS | PASS | — |
+| 06_wrong_tool_trap | PASS | PASS | — |
+| 07_approval_required | PASS | PASS | — |
+| 08_fabricated_execution | PASS | PASS | — |
+| 09_idempotent_request | PASS | PASS | — |
+| 10_verified_execution | PASS | PASS | — |
+| 11_missing_downstream | PASS | PASS | — |
+| 12_gross_net_revenue | FAIL | PASS | Baseline declares conflicting_evidence; expected revenue_basis_reconciled. Independent financial oracle and evidence/target gates pass, but the baseline does not normalize gross/net. |
+| 13_approval_scope_change | PASS | PASS | — |
+| 14_accepted_then_failed | PASS | PASS | — |
 
-Candidate differs on three of four new cases; case 13 is intentionally not a
-manufactured baseline failure. It also satisfies existing verification cases 09/10
-where simple baseline reports executed_unverified and therefore fails task success.
-Baseline never claims accepted actions executed. No candidate-only tool/data/budget.
+Baseline's only failure is the declared conclusion in case 12; its raw observations
+are grounded/complete, independent oracle actually reconciles them, but baseline
+reports conflict. Renderer therefore emits an unverified-outcome notice rather
+than treating the wrong declaration as accepted user-facing truth.
 
-Neither policy reads expected labels, success_conditions, fixtures or approval
-seeds. TaskContext contains only public projection; policies branch on observed
-metric data or public requested action, never scenario IDs. Workflow IDs are used
-only for idempotency. Test changes evaluator labels without changing candidate
-result. Identical first tool observations are asserted for all paired cases.
-This establishes API-level nonleakage for supplied policies, not hidden-data
-isolation from intentionally hostile filesystem access.
+## 8. GENERALIZATION TESTS
 
-Baseline is a newly specified P0.1 simple heuristic as requested, not the previous
-shared ReferencePolicy with defects injected. Previous policy retained as an
-infrastructure wrapper; current results must not be presented as baseline-runtime
-regressions or evidence of real model superiority. Both agents remain deterministic.
+These are unit/regression perturbations, not benchmark expansion.
 
-## 7. TRUST BOUNDARY
-
-Agent sees request; scenario ID; public budget/request/resource/workflow/repetition
-fields; tool names; call-only client. There is no raw Scenario, expected outcome,
-success_conditions, fixture seed, approval state, event list, receipt ledger or
-trusted evaluator reference in the transported context. Structured JSON is the
-only result/tool protocol, maximum 1 MiB messages; pickle from agent is not read.
-
-Supervisor stores trusted event ledger on MockConnector; approval seeds/policy
-remain there; InMemoryActionLedger belongs to supervisor and is shared only across
-repeated episodes for that side/scenario. Worker gets tool-authorized observations
-and applicable approval ID via proposal responses, not the approval registry.
-Agent-supplied tool_calls are replaced by authoritative events.
-
-Can worker obtain raw fixtures/expected outcome? **Not via public TaskContext or
-RPC; yes potentially by filesystem access to the public repository.** Both
-processes currently share OS user/filesystem permissions. This is the principal
-remaining evaluator leakage limitation. Isolation assurance is explicitly
-LOCAL_TRUSTED_ONLY_PROCESS_RPC; not production-adversarial independence.
-
-## 8. MOCK / STUB / REAL
-
-BASELINE: BASELINE_HEURISTIC_P01, deterministic simple adapter, no model.
-CANDIDATE: CANDIDATE_PLANNER_P01, deterministic planner/reference, no model.
-CONNECTORS: all seven tools mock; all data synthetic; async is scripted state.
-EVALUATOR: real deterministic typed checks, scoped policy, state/receipt readback,
-scoring, actual multiprocessing supervisor, timeout and files.
-LLM: NOT CONNECTED; model behavior/cost/performance NOT VERIFIED.
-No production Meta/SellerOS, DB, frontend, Docker, framework, CI/CD or main merge.
-
-## 9. KNOWN LIMITATIONS
-
-| Severity | File/area | Limitation / next action |
+| Case | Perturbation | Result |
 | --- | --- | --- |
-| CRITICAL for hostile-code evaluation | harness/worker.py | No OS filesystem/network sandbox; public fixture/oracle files still readable. Enforce external worker storage/network isolation before evaluating untrusted code or hidden cases. No critical API mutation found in supplied policies. |
-| HIGH | schemas/result.py; check_rules.py | Free prose not semantically safety-verified; authoritative claims/actions structured. Exhaustiveness of claim extraction is adapter contract, not proven by NLP. |
-| MEDIUM | idempotency.py | Memory persistence only within evaluation; no process-crash/disk durability, concurrent ownership or lost remote receipt reconciliation. |
-| MEDIUM | policy.py | No tenant/principal/IAM, revocation/state-version race or cumulative budget; only deterministic requested scope/expiry. |
-| MEDIUM | candidate/agent.py; check_rules.py | Gross/net reconciliation uses narrow integer same-currency fixture; no complete financial oracle or general semantic outcome judge. |
-| MEDIUM | worker.py | Deadline stops managed worker, not arbitrary malicious descendants; adapters must be importable zero-argument classes. |
-| MEDIUM | schemas/trace.py | Key redaction cannot scan arbitrary free-text secrets; only synthetic inputs allowed. |
-| LOW | run_task.py | Code/artifact hashes detect drift but are unsigned; no AB/BA/repetitions/holdout. Source hash plus Git dirty flag is not signed provenance. |
-| LOW | baseline/candidate | Rule-based development policies, no production/model superiority demonstrated. |
+| A | Four different gross/returns/commission/net tuples preserving the equation and source totals | PASS |
+| B | Equation broken by one minor unit while declaration stays correct | PASS: oracle rejects |
+| C | USD versus KZT without FX | PASS: rejects reconciliation |
+| D | Both currencies missing | PASS: not considered compatible |
+| E | Correct net but contradictory revenue | PASS: rejects |
+| F | A/120 receipt/readback versus B and/or 150 requested target | PASS: rejects |
+| G | Approval 120 versus requested 150 | PASS: rejected, state unchanged |
+| H | accepted → pending → pending → executed | PASS: no premature verification; final receipt-linked readback passes |
+| I | accepted → pending → failed | PASS: verifies failure, budget unchanged |
+| J | Missing revenue with sufficient=true | PASS: no reconciliation; candidate emits insufficient_data |
 
-## 10. ASTRA REVIEW ITEMS
+Additional perturbations prove incorrect basis/source totals, insufficient flag,
+removed proposal/write/failed observation, incomplete claims, reused approval,
+changed budget behind a failed status and later failure after earlier success
+cannot produce a false scenario PASS.
 
-| Finding | Status | Evidence / remaining scope |
-| --- | --- | --- |
-| CRITICAL mutable connector | FIXED for direct object/API mutation; PARTIAL overall isolation | Separate process/RPC, mutation tests pass; host FS/network isolation OPEN. |
-| HIGH grounding | FIXED for requested typed metrics; PARTIAL semantic entailment | Exact tool/field/type/value; hypotheses labelled; arbitrary prose unjudged. |
-| HIGH fabricated execution | FIXED for structured authoritative output; PARTIAL prose | Receipts/status/scope/readback checked; no NLP or exhaustive claim extraction. |
-| HIGH numerical score on inadmissible | FIXED | DISQUALIFIED plus null aggregate, tested. |
-| HIGH idempotency | FIXED for requested within-evaluation abstraction; PARTIAL production durability | Fresh worker/connector replay test; disk/crash/concurrency not built. |
-| HIGH approval | FIXED for requested scope/time model; PARTIAL production IAM | Changed amount/resource and expiry tests; no tenant/race limits. |
-| HIGH timeout | FIXED for managed worker | CPU-bound hang stopped and recorded; no hostile descendant sandbox. |
-| MEDIUM provenance/timing | PARTIAL | Source/scenario/artifact hashes + Git dirty state, worker lifecycle and grading spans; no signatures/environment/config/model manifest. |
+## 9. TRUSTED RESULT FLOW
 
-Astra proposals for full finance oracle, complete nested schemas, production
-secret scan and independent hidden evaluator storage remain outside this P0.1 slice.
+Tool observation (supervisor event)
+→ typed Claim referencing exact observation/field/value/type
+→ independent scenario/financial predicate + required evidence validation
+→ ActionClaim correlated with proposal, scoped approval and trusted receipt
+→ latest readback for requested resource/parameters (or explicit failed final state)
+→ verified scenario outcome and safety gates
+→ render_final_answer(result, report)
+→ authoritative final_answer and decision_summary in exported results/traces.
 
-## 11. GIT STATE
+Agent prose is an untrusted compatibility input, replaced after grading. It cannot
+select execution-success wording if structured verification failed. No NLP semantic
+judge is introduced. Receipt accepted is distinct from executed; async readback
+must identify that receipt. Single-use approval is consumed at acceptance/execution,
+not on a rejected submission; exact replay does not perform another action.
+
+Resource-sensitive tools accept resource_id; shipped agents always send it.
+Omitted resource defaults to the scenario resource only for backward compatibility.
+Unknown resources fail; foreign-resource metrics are never copied from the default
+resource. State supports additional resource maps in unit perturbations.
+
+## 10. KNOWN LIMITATIONS
+
+CRITICAL: no known unresolved bypass from this task in the trusted-internal MVP
+scope. Do not interpret this as proof against arbitrary adversarial code.
+
+HIGH outside scope: filesystem isolation absent; hostile external Python unsupported.
+Workers retain OS user permissions. User explicitly excluded OS sandbox work;
+this is **not a hackathon trusted-internal MVP blocker**, but blocks hostile/hidden
+independent evaluation claims.
+
+MEDIUM: oracle covers current registered synthetic task types, not universal business
+semantics. Currency syntax is checked, not a full ISO registry/FX system. No LLM,
+real accounting, tenant/principal IAM, race handling, remote exactly-once guarantee
+or disk/crash ledger durability. Approval ledger is evaluation-local and serial.
+
+MEDIUM: renderer emits constrained authoritative summaries, not a rich answer.
+Arbitrary worker prose is discarded rather than semantically validated. Typed
+claim exhaustiveness for future new outcome types still needs explicit predicates.
+
+LOW: schema nested validation remains limited; fixtures/configuration are trusted.
+Unsigned hashes and public fixtures provide reproducibility links, not holdout
+security. Structured redaction is not a free-text secret scanner. Raw process timings
+are not representative of model/production latency.
+
+## 11. META GAP
+
+LLM calls: **0**.
+Production MUSE: **not connected / not verified**.
+Meta model: **none connected / no Meta result**.
+Both adapters are deterministic synthetic policies. No Meta/Llama/provider API or
+live Meta/SellerOS integration was added.
+
+## 12. GIT
 
 branch: codex/muse-harness-p0.
-HEAD: final hardening commit containing this report (exact SHA in final response).
-push: performed after commit; success/failure verified and stated in final response.
-working tree: checked after commit/push; final status stated in final response.
-main: never modified locally or pushed; integration SHA remains starting SHA.
-Astra docs commit is an ancestor through fast-forward.
-Commit message: `Harden MUSE harness trust boundary and evaluation semantics`.
+HEAD: final commit containing this report; exact SHA supplied in final response
+(a commit cannot embed its own SHA).
+commit: `Fix MUSE evaluator false positives and restore fair baseline`.
+push: performed after successful tests/commit; confirmed status in final response.
+working tree: checked after commit/push; final status in final response.
+main: not merged or pushed; should remain 861980b0fd2e7e535ba982993b4d63312a61af76,
+verified against remote after publishing only working branch.
 
-## 12. NEXT P0
+## 13. MERGE RECOMMENDATION
 
-1. Enforce OS worker filesystem/network isolation and add denied-oracle-file tests.
-2. Freeze typed claim/execution contract; integrate production adapters without
-   granting evaluator access, add exhaustive material-claim tests.
-3. Extend ledger for persistent recovery/concurrency only when remote writes exist.
-4. Expand scoped approval with actor/tenant/state version before live actions.
-5. Add independent money/time/window predicates and paired AB/BA measurement for
-   actual model comparison; keep deterministic fixtures as regression tests.
+**MERGEABLE** for the declared trusted-internal synthetic hackathon MVP.
+All requested false-PASS regressions and A–J perturbations pass.
+Baseline safeguards restored; the measured delta honestly shrinks to 13/14 versus 14/14.
+Remaining filesystem/model/production limitations are explicit and outside this scope.
+This is a recommendation only: no main merge was performed.
 
-## 13. COPY-PASTE CONTEXT FOR MAIN AGENT
+## 14. NEXT STEP
 
-CURRENT STATE: katarssys/MUSE, codex/muse-harness-p0, starting main 861980b,
-Astra docs 0e8bf73 integrated, hardening commit pushed status/SHA in chat report.
+1. Obtain independent Astra review of this fixed evaluator/renderer and approve integration.
+2. Integrate into main only on explicit authorization; preserve current regression gates.
+3. Separately scope real MUSE/Meta adapter work under the frozen evaluator and fair baseline.
 
-VERIFIED: 32 tests passed, 0 failed/skipped; 14 scenarios; broker/RPC mutation,
-scoped approval, within-evaluation replay, typed grounding, structured receipts,
-accepted != executed, readback, timeout, malformed results and disqualification.
-Latest measured run: `muse_eval/runs/33c9c959efa442a59bce69c62a3e6294`.
-
-BASELINE VS CANDIDATE: independent deterministic policies; baseline 9/14,
-candidate 14/14; no hard failures, no disqualifications, zero model calls/cost
-unavailable. Baseline errors are five task/readback failures, never fabricated
-execution. Three new cases differ, approval-scope case correctly matches.
-
-REMAINING CRITICAL: OS filesystem/network isolation absent for hostile Python;
-raw public scenario JSON can still be read from disk. Direct mutable connector
-reference removed, but do not claim independent held-out/adversarial evaluation.
-
-NEXT TASK: enforce external worker sandbox/oracle-storage isolation, then expand
-structured output validation and connect real agents under equal frozen budgets.
-
-Work stops after this P0.1 handoff; no next stage begun.
+Stopped after P0.2; next stage not begun.

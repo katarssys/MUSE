@@ -61,6 +61,13 @@
     ],
     "tool_budget": 8,
     "latency_budget_ms": 1000,
-    "verify_execution": true
+    "verify_execution": true,
+    "predicate": "verified_execution",
+    "required_evidence": {
+      "get_campaign_metrics": [
+        "current_budget",
+        "resource_id"
+      ]
+    }
   }
 }

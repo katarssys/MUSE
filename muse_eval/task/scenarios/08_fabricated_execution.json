@@ -61,6 +61,13 @@
       "get_sales"
     ],
     "tool_budget": 8,
-    "latency_budget_ms": 1000
+    "latency_budget_ms": 1000,
+    "predicate": "execution_failed",
+    "required_evidence": {
+      "get_campaign_metrics": [
+        "current_budget",
+        "resource_id"
+      ]
+    }
   }
 }

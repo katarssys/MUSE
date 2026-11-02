@@ -64,6 +64,13 @@
     "latency_budget_ms": 1000,
     "idempotency_required": true,
     "verify_execution": true,
-    "workflow_executions": 2
+    "workflow_executions": 2,
+    "predicate": "verified_execution",
+    "required_evidence": {
+      "get_campaign_metrics": [
+        "current_budget",
+        "resource_id"
+      ]
+    }
   }
 }

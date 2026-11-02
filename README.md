@@ -1,4 +1,4 @@
-# MUSE evaluation harness — P0.1
+# MUSE evaluation harness — P0.2
 
 Python 3.10+, standard library only. From `/workspace/MUSE`:
 
@@ -7,106 +7,123 @@ python -m unittest discover -s muse_eval/tests -v
 python -m muse_eval.harness.run_task
 ```
 
-The CLI prints `muse_eval/runs/<uuid>/` and exits **1** if either adapter fails any
-scenario. Current baseline limitations cause five expected benchmark failures;
-this is an honest comparison, not a unit-test failure. Candidate passes 14/14 in
-the verified development run. This is deterministic policy evaluation, not LLM or
-production MUSE performance. Use `--scenarios DIR`, `--output DIR`, or
-`--timeout-ms 3000`. Runs contain baseline/candidate results and traces, checks,
-score, metadata; generated runs remain ignored by Git.
+The CLI prints `muse_eval/runs/<uuid>/`; exit **1** means at least one side failed
+at least one scenario. Current honest baseline passes 13/14; candidate passes 14/14.
+The single baseline failure is gross/net reconciliation. Neither is a production
+MUSE or Meta model. The earlier 9/14 baseline lacked original safeguards; that gap
+was partly artificial and is superseded by this result. No new benchmark scenarios:
+the same 14 cases now have explicit independent predicates and evidence requirements.
 
-## Trust and lifecycle
+`--scenarios DIR`, `--output DIR`, `--timeout-ms 3000` select inputs/outputs/deadline.
+Each run saves baseline/candidate JSON, both traces, checks, score and metadata.
+Generated runs and Python caches are ignored by Git. Run metadata includes source/
+scenario/artifact hashes, Git HEAD/dirty status and raw timing. Hashes are unsigned
+integrity links, not proof of authorship. Startup/lifecycle/RPC dominate timing;
+no candidate speedup is claimed. Model time/cost are null, model calls/retries zero.
 
-Supervisor owns Scenario, MockConnector, approval policy, action ledger, events,
-evaluator and output files. Each episode starts a fresh **spawned process**.
-Worker receives only request, opaque scenario/workflow IDs, allowlisted public
-state (budget, requested_budget, resource_id, workflow_id, request_repetitions),
-available tool names, and `AgentToolClient.call(name,args)` over a JSON-only pipe.
-It receives no live parent object or fixture/approval/expectation dictionaries.
-Tool results are serialized copies; forged agent tool_calls are overwritten by
-supervisor events. No pickle is accepted from worker output. Replies are size
-bounded; JSON rejects NaN/Infinity. Agent classes must be importable, zero-argument
-adapters; instance configuration is not transported. Tests use module-level adapters.
+## Trusted internal MVP threat model
 
-Supervisor enforces tool-call budgets and wall-clock deadlines, terminates/kills
-a hanging worker, records failure, and continues the suite. Telemetry includes
-worker initialization, apply, RPC, response transfer and shutdown. Offline grading
-is measured separately; whole-run wall time includes artifact writes (except final
-self-timing field update). Metadata records scenario/source/artifact hashes, Git
-HEAD and dirty status. These links are not cryptographic proof of authorship.
+Supervisor owns Scenario, MockConnector, approvals, ledger, event log, evaluator
+and output files. A fresh spawned worker receives only request, opaque workflow/
+scenario IDs, allowlisted public state, tool names, and `tools.call(name,args)`.
+Bounded JSON-only RPC carries observations and result data; no pickle output or
+live trusted connector reference reaches the worker. Returned data are copies;
+agent tool_calls are replaced by trusted events. Supervisor enforces tool budget,
+wall-clock timeout and termination. Importable zero-argument adapter classes only.
 
-**Isolation assurance: LOCAL_TRUSTED_ONLY_PROCESS_RPC.** This prevents direct
-connector/evaluator object mutation through the agent API; it is **not an OS
-sandbox**. Worker code still has the user's filesystem/network permissions and
-can read public scenario JSON from disk or import evaluator code. Landlock ABI
-probe in this environment returned ENOSYS. Held-out oracle files, secrets and
-untrusted arbitrary Python require an externally enforced sandbox/read-only
-allowlist before adversarial independence can be claimed. No secrets are passed
-to agents for these synthetic evaluations. Do not run hostile adapters as a
-security test outside an OS sandbox. Process boundary tests cover API mutation,
-not denial of host filesystem/network access or malicious process descendants.
+**Trusted internal MUSE code only. Filesystem isolation is absent; hostile external
+Python is unsupported.** Workers retain user filesystem/network permissions and
+can read public scenarios. No OS sandbox is built in P0.2; this is not a blocker
+for the trusted hackathon MVP, but this harness must not be advertised as an
+independent evaluation of adversarial/held-out code. No live APIs, secrets or real
+customer data are used. Structured key redaction is not a free-text secret scanner.
 
-## Contracts
+## Evaluator is the oracle
 
-`Scenario.load` validates the typed JSON root. `Agent.apply(TaskContext) ->
-AgentResult` is shared. Typed evidence uses Claim(type,subject,metric,value,
-source_refs,certainty); certainty is FACT/SIGNAL/INFERENCE/HYPOTHESIS/UNKNOWN.
-Metric FACT/SIGNAL requires the exact field/value/type in a referenced authorized
-read from the named tool. Hypotheses require valid read references and HYPOTHESIS;
-unknowns require UNKNOWN and null value. No semantic truth proof of a hypothesis.
-Unsupported INFERENCE types are rejected by deterministic grounding.
+`Scenario.load` loads JSON into a typed dataclass. `success_conditions` contains:
 
-`ActionClaim(action_type,resource,requested_parameters,status,receipt_ref)` is
-authoritative. EXECUTED requires a matching executed receipt; VERIFIED additionally
-requires subsequent readback. ACCEPTED requires an accepted receipt and **does not
-mean executed**. Synthetic async write returns accepted then a failed/unchanged
-state on readback; there is no actual background worker. FAILED is a statement of
-non-success; it does not authorize execution. Free-form prose itself is not
-semantically safety-verified; authoritative execution claims must be structured.
-No NLP parsing or LLM judge is used.
+- `predicate`: registered deterministic predicate in `harness/predicates.py`;
+- `required_evidence`: tool → list of required fields, tied to the latest correctly
+  scoped observation and its typed FACT claims;
+- optional `expected_final_state` for failed async writes (failed operation and
+  unchanged budget); existing budgets/required-tools/repeated-workflow settings.
 
-Seven checks cover completion/contract, expected outcome plus required readback,
-typed grounding, tool correctness, fabrication, scoped approval, and idempotency.
-Any inadmissible result is `DISQUALIFIED` with `aggregate: null`; raw components
-remain diagnostic. Correctness failures get no latency/cost/tool-efficiency credit.
-Original P0 weights remain 35/20/15/15/5/5/5; Astra's alternative weighting is a
-proposal, not silently applied. Unknown cost stays null, available_points=95.
+Missing/unknown predicates or missing evidence configuration fail closed. Outcome
+labels are declarations. Task success requires the expected declaration **and**
+the independently evaluated business predicate, target correctness, grounded claims
+and required evidence. Full scenario PASS additionally requires every safety/tool/
+completion check. The seven original checks remain; target_correctness and
+required_evidence are explicit additional checks. checks.json also records oracle
+predicate ID and its independent verdict.
 
-Approvals bind ID, action type, resource, canonical budget parameter hash, issued_at
-and valid_until on a deterministic fixture clock. Boolean approval is removed.
-Proposal tool returns authorized/approval_required and an applicable approval ID;
-caller-supplied approved=True cannot bypass scope. Evaluation checks receipts
-against the trusted policy again. No principal/tenant IAM or approval races modeled.
+Financial oracle independently checks source metric bases (ads gross, seller net),
+explicit matching three-letter uppercase currency codes, integer nonnegative gross/
+returns/commission/net/revenue, sufficient data, `reported_revenue == gross`,
+`gross - returns - commission == net`, and `revenue == net`. No FX conversions or
+complete financial accounting system; currency syntax is not an ISO registry lookup.
+Typed metric claims check field/value/type against referenced trusted reads;
+hypotheses require HYPOTHESIS and supporting refs, unknowns require UNKNOWN/null.
+No semantic LLM judge is used.
 
-InMemoryActionLedger belongs to supervisor and persists across fresh connector/
-worker episodes of a workflow **within one evaluation**. Key includes workflow,
-action type, resource, idempotency key; changed payload conflicts. Side/ scenario
-state is independent. Scenario 09 runs the workflow twice with the same ledger.
-No disk/process-restart durability, remote crash reconciliation or concurrent
-exactly-once guarantee is claimed. An accepted operation replays as accepted;
-readback exposes the synthetic failed final state without resubmitting it.
+Action predicates bind scenario resource/budget → proposal → scoped approval →
+execution arguments/receipt → subsequent final readback of the same resource.
+A label such as verification_failed cannot substitute for a real proposal, write,
+accepted/executed receipt and a failed readback tied to that receipt. The last
+resource observation is authoritative; earlier success cannot hide later failure.
 
-## Honest comparison and fixtures
+## Actions, state, approvals and idempotency
 
-BASELINE_HEURISTIC_P01 is a new minimal one-step observation/proposal/receipt
-policy. It handles ordinary anomalies and approval requests but lacks a readback
-planner or gross/net normalization. It never claims queued actions executed.
-CANDIDATE_PLANNER_P01 adds missing-evidence abstention, metric-basis reconciliation,
-hypothesis classification and verification. Both receive identical public inputs,
-tools, fixtures, permissions, budgets and evaluator; neither branches on scenario
-IDs or imports expectations. The previous P0 ReferencePolicy is retained as an
-infrastructure wrapper around the reference candidate, not called by baseline.
-The baseline was redefined explicitly per P0.1 request; these results are not a
-regression comparison with the previous identical reference adapters.
+Mock state is `resource_id → state`. Resource-sensitive tool calls accept
+`resource_id`; omitted resource defaults to the scenario resource for P0 compatibility.
+Both shipped agents supply it explicitly. Unknown resources are rejected; reading
+one campaign never exposes another campaign's updated budget or fixture metrics.
+Additional resource states/fixtures are used only by unit perturbations, not new
+benchmark cases.
 
-All 14 scenarios are synthetic/public, including four new cases: missing downstream
-evidence; gross/net mismatch with integer same-currency arithmetic; changed approval
-scope; accepted write followed by failure. Case 13 legitimately yields the same
-handoff from both agents. Expected labels are intentionally public development
-fixtures; no holdout quality claim. Gross/net is a narrow integer fixture check,
-not a production financial correctness oracle.
+Approval binds ID/action/resource/budget hash/issued_at/valid_until on fixture clock.
+Default is **single-use**, consumed when a write is accepted or executed; failed
+submission does not consume. Different idempotency keys cannot reuse the approval.
+Exact replay of the committed operation remains allowed and does not consume again.
+`reusable: true` explicitly enables reuse; evaluator independently checks transcript
+consumption. No production IAM, principal/tenant rules or concurrency guarantees.
 
-Structured logging redacts sensitive keys and excludes private-reasoning fields;
-this is not a free-text secret scanner. Do not put credentials, private reasoning
-or real customer data in scenarios, answers, metadata or tool results.
-See HANDOFF_REPORT.md for actual checks, differences and remaining limitations.
+Supervisor-owned InMemoryActionLedger survives fresh worker/connector episodes
+within one evaluation; key is workflow/action/resource/idempotency key. Payload
+changes conflict. No disk/crash durability or real remote reconciliation. Scripted
+async transitions cover pending/failed/executed; accepted is not execution success.
+Final readback can confirm execution of an initially accepted receipt. There is no
+actual async background worker. These transitions support regression perturbations.
+
+Critical failures remain DISQUALIFIED with aggregate=null; raw measurements are
+retained. Mandatory correctness failures get no efficiency credit. P0 weights stay
+35/20/15/15/5/5/5; unknown cost has null points and available_points=95.
+
+## Authoritative answer
+
+`Agent.apply(TaskContext) -> AgentResult` retains typed facts/actions/outcome.
+Worker final_answer and decision_summary are untrusted compatibility inputs.
+After grading, `apply_trusted_presentation` replaces **both** with
+`render_final_answer()` templates selected solely from the verified structured
+result and evaluator verdict. Rejected/disqualified output cannot render an
+accepted user-facing execution success. Agent-authored prose is not persisted in
+those authoritative fields. Arbitrary free text is not semantically evaluated;
+only the trusted renderer's answer is authoritative.
+
+ActionClaim EXECUTED requires a matching executed receipt; VERIFIED additionally
+requires final same-resource/amount readback (or a final executed observation tied
+to an initially accepted receipt). ACCEPTED remains pending. Material assertions
+must be represented in typed claims/actions rather than hidden in metadata.
+
+## Fair baseline and candidate
+
+BASELINE_HEURISTIC_P02 restores post-action readback and the nonempty downstream
+sales guard from original P0. It remains a simple heuristic, with no multi-step
+planner or gross/net normalization. CANDIDATE_PLANNER_P02 reconciles metric basis;
+its corrections reject missing currency, contradictory revenue/net and missing
+revenue even when sufficient=true. Both receive identical tools/data/permissions/
+budgets/evaluator, and neither branches on expected labels or scenario IDs.
+ReferencePolicy is an infrastructure wrapper only. All 14 scenarios are public,
+synthetic development fixtures; no held-out or Meta/LLM capability claim.
+
+See HANDOFF_REPORT.md for test names, A–J perturbations, per-scenario outcomes and
+remaining limitations. OS sandbox, live APIs and model integration are out of scope.

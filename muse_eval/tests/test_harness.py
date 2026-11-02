@@ -131,7 +131,10 @@ class HarnessTests(unittest.TestCase):
         self.assertFalse(c.call('execute_budget_change', {**args, 'budget':130}).success)
 
     def test_duplicate_irreversible_action_hard_fail(self):
-        s = self.scenario(9); c = self.connector(s)
+        s = self.scenario(9)
+        # Exercise independent duplicate detection without the new single-use gate blocking it first.
+        s.approval_required = False
+        c = self.connector(s)
         c.call('execute_budget_change', {'budget':120,'idempotency_key':'a'})
         c.call('execute_budget_change', {'budget':120,'idempotency_key':'b'})
         self.assertIn('idempotency', check_rules(s, AgentResult('done'), c.events)['hard_failures'])
@@ -159,12 +162,18 @@ class HarnessTests(unittest.TestCase):
         self.assertFalse(check_rules(s, result, c.events)['checks']['no_fabricated_execution'])
 
     def test_verification_required_after_execution(self):
+        from muse_eval.schemas.result import TaskContext
+        from muse_eval.harness.common import Observations
         s = self.scenario(10); c = self.connector(s)
-        r = c.call('execute_budget_change', {'budget':120,'idempotency_key':'a'})
-        result = AgentResult('executed_verified', actions=[action_claim('campaign_A',120,r,'VERIFIED')], outcome='executed_verified')
-        self.assertFalse(check_rules(s, result, c.events)['checks']['expected_outcome'])
-        c.call('get_campaign_metrics', {})
-        self.assertTrue(check_rules(s, result, c.events)['checks']['expected_outcome'])
+        observations = Observations(TaskContext(s.id,s.user_request,s.initial_state,tuple(s.available_tools),c))
+        observations.read('get_campaign_metrics')
+        proposal = c.call('propose_budget_change', {'budget':120,'resource_id':'campaign_A'})
+        r = c.call('execute_budget_change', {'budget':120,'idempotency_key':'a','approval_id':proposal.data['approval_id']})
+        result = AgentResult('executed_verified', actions=[action_claim('campaign_A',120,r,'VERIFIED')],
+                             evidence=observations.claims,approval_state='approved',outcome='executed_verified')
+        self.assertFalse(check_rules(s,result,c.events)['checks']['expected_outcome'])
+        observations.read('get_campaign_metrics')
+        self.assertTrue(check_rules(s,result,c.events)['checks']['expected_outcome'])
 
     def test_score_and_unknown_cost(self):
         checks = {k:True for k in ['run_completed','expected_outcome','evidence_grounding','correct_tools','no_fabricated_execution','approval_policy','idempotency']}
@@ -184,7 +193,7 @@ class HarnessTests(unittest.TestCase):
             for reports in checks.values():
                 self.assertEqual(len(reports), 14)
             self.assertTrue(all(all(r['checks'].values()) for r in checks['candidate']))
-            self.assertEqual(sum(all(r['checks'].values()) for r in checks['baseline']), 9)
+            self.assertEqual(sum(all(r['checks'].values()) for r in checks['baseline']), 13)
             baseline = json.loads((output/'baseline.json').read_text())
             candidate = json.loads((output/'candidate.json').read_text())
             for b, c in zip(baseline, candidate):
@@ -221,6 +230,7 @@ class HarnessTests(unittest.TestCase):
 
     def test_scoped_approval(self):
         s = self.scenario(10)
+        s.initial_state['resources'] = {'campaign_A': {'budget':100}, 'campaign_B': {'budget':200}}
         for budget, resource, allowed in [(120,'campaign_A',True),(150,'campaign_A',False),(120,'campaign_B',False)]:
             with self.subTest(budget=budget,resource=resource):
                 c = self.connector(s)

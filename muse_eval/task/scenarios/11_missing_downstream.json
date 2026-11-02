@@ -44,6 +44,12 @@
       "get_campaign_metrics"
     ],
     "tool_budget": 8,
-    "latency_budget_ms": 1000
+    "latency_budget_ms": 1000,
+    "predicate": "insufficient",
+    "required_evidence": {
+      "get_campaign_metrics": [
+        "cpc_delta"
+      ]
+    }
   }
 }

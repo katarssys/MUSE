@@ -18,6 +18,7 @@ from .check_rules import check_rules
 from .score import score
 from .worker import execute_agent
 from .idempotency import InMemoryActionLedger
+from .render import apply_trusted_presentation
 import subprocess
 
 PACKAGE = Path(__file__).resolve().parents[1]
@@ -56,6 +57,7 @@ def run(scenario_dir=None, output_root=None, agents=None, timeout_ms=3000):
             stats["worker_spans"] = worker_spans
             evaluation_started = perf_counter()
             report = check_rules(scenario, result, events, completed)
+            result = apply_trusted_presentation(result, report)
             trace = Trace(scenario.id, agent.version, timestamp(), events, result.evidence,
                           result.decision_summary, result.approval_state, result.actions,
                           {"checks": report["checks"]}, result.outcome, stats["total_wall_clock_ms"],

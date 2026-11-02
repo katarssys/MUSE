@@ -58,6 +58,24 @@
       "get_sales"
     ],
     "tool_budget": 8,
-    "latency_budget_ms": 1000
+    "latency_budget_ms": 1000,
+    "predicate": "finance_reconciled",
+    "required_evidence": {
+      "get_campaign_metrics": [
+        "reported_revenue",
+        "currency",
+        "revenue_basis"
+      ],
+      "get_sales": [
+        "gross",
+        "returns",
+        "commission",
+        "net",
+        "revenue",
+        "currency",
+        "revenue_basis",
+        "sufficient"
+      ]
+    }
   }
 }

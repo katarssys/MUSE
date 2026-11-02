@@ -50,6 +50,18 @@
       "get_sales"
     ],
     "tool_budget": 8,
-    "latency_budget_ms": 1000
+    "latency_budget_ms": 1000,
+    "predicate": "sales_stable",
+    "required_evidence": {
+      "get_campaign_metrics": [
+        "reported_revenue",
+        "cpc_delta"
+      ],
+      "get_sales": [
+        "revenue",
+        "sufficient",
+        "revenue_delta"
+      ]
+    }
   }
 }

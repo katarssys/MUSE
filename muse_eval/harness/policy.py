@@ -13,6 +13,7 @@ class Approval:
     parameters_hash: str
     issued_at: int
     valid_until: int
+    reusable: bool = False
 
     def permits(self, action_type, resource, parameters, now):
         return (self.action_type == action_type and self.resource_id == resource

@@ -51,6 +51,21 @@
       "get_margin"
     ],
     "tool_budget": 8,
-    "latency_budget_ms": 1000
+    "latency_budget_ms": 1000,
+    "predicate": "revenue_drop",
+    "required_evidence": {
+      "get_campaign_metrics": [
+        "reported_revenue",
+        "cpc_delta"
+      ],
+      "get_sales": [
+        "revenue",
+        "sufficient",
+        "revenue_delta"
+      ],
+      "get_margin": [
+        "margin"
+      ]
+    }
   }
 }

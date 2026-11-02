@@ -3,7 +3,7 @@ from ..schemas.result import AgentResult
 
 class CandidateAgent:
     """Deterministic evidence-aware planner, not production MUSE or an LLM."""
-    version = "CANDIDATE_PLANNER_P01"
+    version = "CANDIDATE_PLANNER_P02"
 
     def apply(self, ctx):
         observations = Observations(ctx)
@@ -14,7 +14,7 @@ class CandidateAgent:
         resource = ctx.initial_state.get("resource_id", "campaign_A")
         budget = ctx.initial_state.get("requested_budget")
         if budget is not None:
-            proposal = ctx.tools.call("propose_budget_change", {"budget": budget, "resource_id": resource})
+            proposal = ctx.tools.call("propose_budget_change", {"budget": budget, "resource_id": resource, "idempotency_key": ctx.initial_state.get("workflow_id", ctx.scenario_id)})
             if not proposal.success:
                 outcome = "action_failed"
             elif proposal.data["status"] == "approval_required":
@@ -34,20 +34,23 @@ class CandidateAgent:
                     if final.get("operation_status") == "failed":
                         actions[-1]["status"] = "FAILED"
                         outcome = "verification_failed"
-                    elif receipt.data["status"] == "executed" and final.get("current_budget") == budget:
+                    elif (final.get("resource_id") == resource and final.get("current_budget") == budget
+                          and (receipt.data["status"] == "executed" or final.get("operation_status") == "executed")):
                         actions[-1]["status"] = "VERIFIED"
                         outcome = "executed_verified"
                     else:
                         outcome = "pending_verification"
-        elif ads and sales and sales.get("sufficient", True):
+        elif ads and sales and sales.get("sufficient", True) and "revenue" in sales:
             ads_basis, sales_basis = ads.get("revenue_basis"), sales.get("revenue_basis")
             if ads_basis and sales_basis and ads_basis != sales_basis:
                 # Reconcile only same-unit observed values; no currency conversions or inferred net.
                 if (ads_basis == "gross" and sales_basis == "net" and
-                    ads.get("currency") == sales.get("currency") and
+                    isinstance(ads.get("currency"), str) and len(ads["currency"]) == 3 and
+                    ads["currency"].isupper() and ads.get("currency") == sales.get("currency") and
                     ads.get("reported_revenue") == sales.get("gross") and
                     all(type(sales.get(k)) is int for k in ("gross", "returns", "commission", "net")) and
-                    sales["gross"] - sales["returns"] - sales["commission"] == sales["net"]):
+                    sales["gross"] - sales["returns"] - sales["commission"] == sales["net"] and
+                    sales.get("revenue") == sales["net"]):
                     outcome = "revenue_basis_reconciled"
                 else:
                     outcome = "conflicting_evidence"
