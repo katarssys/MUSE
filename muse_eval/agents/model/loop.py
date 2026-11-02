@@ -9,6 +9,7 @@ from .base import ModelNotConnected, ModelProviderError
 from .provider import ChatCompletionsClient
 from .parser import parse_decision, decision_schema, InvalidModelOutput
 from .prompts import TOOL_SPECS
+from .orchestration import OrchestrationGuard, FEEDBACK
 
 class ModelAgent:
     system_prompt = ""
@@ -35,6 +36,9 @@ class ModelAgent:
         config=client.config
         allowed=[name for name in context.available_tools if name in TOOL_SPECS]
         schema=decision_schema(allowed)
+        guard=OrchestrationGuard(allowed)
+        usage["orchestration_rejections"]=0
+        usage["orchestration_feedback_codes"]=[]
         # Public development IDs contain scenario names; use opaque aliases so neutral
         # prompts do not accidentally reveal task families through workflow/receipt IDs.
         aliases={}
@@ -85,6 +89,15 @@ class ModelAgent:
             try:decision=parse_decision(response,allowed)
             except InvalidModelOutput:
                 return finish(AgentResult("",outcome="error"),"MODEL_OUTPUT_INVALID")
+            rejected=guard.rejection(decision)
+            if rejected:
+                usage['orchestration_rejections']+=1
+                usage['orchestration_feedback_codes'].append(rejected)
+                messages.append({'role':'user','content':json.dumps({'protocol_feedback':{
+                    'code':rejected,'instruction':FEEDBACK[rejected]},'remaining_limits':{
+                    'model_calls':config.max_model_calls-usage['model_call_count'],
+                    'tool_calls':config.max_tool_calls-usage['tool_call_count']}})})
+                continue
             if decision['kind']=='final':
                 final=decision['result']
                 for action in final.actions:
@@ -97,8 +110,10 @@ class ModelAgent:
                 return finish(AgentResult("",outcome="error"),"MODEL_TOOL_LIMIT")
             observation=context.tools.call(decision['tool'],decision['args'])
             usage['tool_call_count']+=1
+            public_observation=observation_view(asdict(observation))
+            guard.observe(decision['tool'],decision['args'],public_observation)
             # Only structured public tool decisions/observations are retained in memory;
             # no raw model prose or private reasoning is persisted.
             messages.append({"role":"assistant","content":json.dumps({"decision":decision},allow_nan=False)})
-            messages.append({"role":"user","content":json.dumps({"tool_observation":observation_view(asdict(observation))},allow_nan=False)})
+            messages.append({"role":"user","content":json.dumps({"tool_observation":public_observation},allow_nan=False)})
         return finish(AgentResult("",outcome="error"),"MODEL_CALL_LIMIT")

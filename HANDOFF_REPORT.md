@@ -1,3 +1,143 @@
+# P1.1 integration onto current remote
+
+- Replayed validated c559636a48e462126d743ef4d790a048a7dfcbf5 onto
+  36a706d6e8d7b16724c73584fa1c7b127f055a04; only HANDOFF_REPORT.md conflicted.
+  Preserved remote report and prepended the P1.1 report below as historical context.
+- All five P1.1 implementation/test files are byte-identical to c559636.
+- Remote provider.py, parser.py and both Meta protocol test files are byte-identical
+  to 36a706d. All 38 protected files are raw-byte-identical to frozen P0.2.
+- `python -m unittest discover -s muse_eval/tests -v`: 121 passed, 0 failed,
+  0 skipped (4.559 seconds). Python is the Linux equivalent of the Windows py launcher.
+- `git diff --check`: PASS. No new scenario IDs, expected-outcome mappings,
+  predicates or fixture logic were introduced; no real API calls were made.
+- Publication is authorized for this integration; push result is reported separately.
+
+---
+
+# Latest handoff: shared model orchestration and output contract
+
+## Root cause and scope
+
+Live trace failures supplied by the user show that transport acceptance is not
+agent correctness: MUSE can finalize without acquiring evidence; both models can
+invent metric aliases; accepted writes can be left without readback; proposal-only
+handoffs can be confused with executed actions. Earlier prompts stated principles
+but did not fully specify the wire contract or enforce structural obligations.
+No new live model run was performed here; no model uplift is claimed.
+
+## Prompt-only assessment and implementation
+
+Prompt-only instructions cannot guarantee tool acquisition/readback/approval, as
+shown by the supplied traces despite an existing verification instruction. The fix
+therefore combines a shared public prompt/output contract with a minimal generic
+OrchestrationGuard. Both baseline and MUSE receive the same safety/serialization
+rules and guard. MUSE keeps stronger planning/evidence instructions; the baseline
+remains an ordinary tool-use agent, with all tools and unchanged limits.
+
+- A premature insufficient_data/UNKNOWN final with available but unattempted reads
+  requests another model decision. The guard does not choose which source is relevant.
+- Exact FACT/SIGNAL source, data key, type, value and observation ref are checked;
+  aliases are rejected, not renamed. No evidence is synthesized.
+- Successful submitted writes need a same-resource verification attempt if the public
+  tool capability catalog exposes a verifier. Receipt/workflow IDs are correlated
+  when present. A failed read is only an attempt, never proof of successful execution.
+- Denied/missing-ID/wrong-scope proposal authorization prevents submission. Proposal
+  observations stay distinct from the execution actions list.
+- Rejected decisions produce fixed protocol-feedback codes and consume the existing
+  model-call budget. No automatic calls, unlimited retries, budget increases,
+  parameter repair, outcome remapping or expected-tool sequences are introduced.
+- Relevance, next tool, claims, hypothesis/uncertainty and final classification remain
+  model decisions. The guard does not prove semantic relevance or exhaust every source.
+
+Tool effect/approval/verifier metadata describe existing public tool capabilities,
+not scenario-specific requirements. An alternate inventory write/read capability
+pair in tests demonstrates that the readback guard is not tied to benchmark names.
+
+## Important unresolved frozen-contract incompatibilities
+
+P0.2 grounded() only admits successful get_* observations. Therefore honest UNKNOWN
+claims citing failed reads and FACTs citing proposal observations still fail frozen
+grounding. This implementation preserves those exact refs and explicitly tests the
+rejection; it never substitutes a convenient successful ref or hides the claims.
+Full evaluator-compatible evidence for those requested claim classes is PARTIAL,
+not solved by this patch while P0.2 is frozen.
+
+For numeric FACTs P0.2 also requires subject=source tool, not resource ID. The common
+wire contract retains source-tool subject; resource identity remains in observed
+resource_id and action.resource. Resource-as-FACT-subject is not silently substituted.
+
+Outcome naming remains a model/public-protocol decision. The prompt distinguishes
+submission failure from failed post-acknowledgment readback, but the guard does not
+rewrite action_failed into verification_failed. A regression explicitly proves this.
+The action_failed sequence requested in the brief can still be reported honestly;
+it need not match a particular frozen scenario's expected label.
+
+Likewise, the guard does not force unrelated read tools merely to satisfy hidden
+required-tools lists. No scenario PASS or changed real benchmark score is guaranteed.
+These are contract limitations, not permission to modify frozen evaluation.
+
+## Exact changed files
+
+- muse_eval/agents/model/prompts.py: shared contract, MUSE instructions, public tool capabilities.
+- muse_eval/agents/model/orchestration.py: generic history/decision rejection guards.
+- muse_eval/agents/model/loop.py: bounded feedback and observation tracking, no auto-execution.
+- muse_eval/tests/test_model_orchestration.py: 17 scripted regression tests.
+- muse_eval/tests/test_model_adapters.py: adapt three scripted flows to valid acquisition/authorization/readback, preserving original assertions.
+- HANDOFF_REPORT.md: this report.
+
+Parser, schemas, provider/framing, deterministic agents, all scenario/fixture data,
+scoring and evaluator logic are unchanged. Existing meta_schema_fix.patch is preserved.
+
+## Validation actually run
+
+- `python -m unittest discover -s muse_eval/tests -p 'test_model_adapters.py' -v`:
+  22 passed, 0 failed, 0 skipped after adapting scripted flows.
+- `python -m unittest discover -s muse_eval/tests -p 'test_model_orchestration.py' -v`:
+  final 17 passed, 0 failed, 0 skipped.
+- `python -m unittest discover -s muse_eval/tests -v`:
+  final **121 passed, 0 failed, 0 skipped**, 4.643 seconds.
+  This is the Linux equivalent of the requested Windows `py -m unittest ...`.
+- `git diff --check`: PASS.
+- Frozen P0.2 fingerprint: all 38 files unchanged. Strict parser/base/provider are
+  byte-identical to starting HEAD ab00de4d6f51f949997b6994be0f83b9857683fe.
+
+Tests cover prompt acquisition rules, exact field/value/type/ref handling without
+alias repair, failed-call UNKNOWN preservation, bounded feedback, readback before
+final, resource/receipt correlation, failed verification attempts, approval denial,
+missing IDs, changed scope, proposal/execution distinction, equal config/tools/schema,
+absence of per-case lookups and unchanged frozen files. Tests are scripted protocol
+checks, not actual model inference. Existing 104 tests are retained; no cases deleted.
+
+## No hidden evaluator information
+
+No scenario IDs, per-scenario expected labels, predicates, fixture logic or required-
+evidence lists are injected into prompts/guard. Shared output-code vocabulary and
+source-field serialization rules remain public protocol, not per-case answers.
+The production guard imports only public TOOL_SPECS and deepcopy, not evaluator code.
+No deterministic solver or benchmark-specific source sequence was added.
+
+## Git and local live validation
+
+Working branch: codex/muse-model-adapter-p1. Starting HEAD: ab00de4d6f51f949997b6994be0f83b9857683fe.
+Local HEAD: commit containing this report; exact SHA in final response.
+Publication: NOT ATTEMPTED, as explicitly instructed. No real API calls made.
+
+After transferring the fix, with the already verified local Meta configuration and
+credential securely set, execute exactly one paired five-case run from repository root:
+
+```powershell
+py -m muse_eval.agents.model.run_benchmark
+```
+
+Do not infer a new model success rate from unit tests. Inspect per-case tool traces,
+protocol-feedback codes, raw model/tool counts and frozen checks. Exit 1 means one
+or more actual benchmark failures; do not rerun automatically or weaken predicates.
+The known frozen failed/proposal-ref limitations above may still cause FAIL.
+
+Stopped after this handoff; no next stage begun.
+
+---
+
 # Latest maintenance: Meta strict wire protocol
 
 - Live schema is now a closed root object with required `decision` containing

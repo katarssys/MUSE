@@ -96,6 +96,7 @@ class ModelAdapterTests(unittest.TestCase):
 
     def test_unknown_usage_and_cost_stay_null(self):
         ctx,_,_=self.context()
+        ctx=replace(ctx,available_tools=())  # No readable source: UNKNOWN/insufficient is a legal protocol handoff.
         client=ScriptedClient([ModelResponse(structured_output=final_decision())])
         telemetry=MuseModelAgent(client).apply(ctx).metadata['model_telemetry']
         for key in ('input_tokens','output_tokens','estimated_cost'):self.assertIsNone(telemetry[key])
@@ -112,7 +113,8 @@ class ModelAdapterTests(unittest.TestCase):
         ctx,_,_=self.context(12)
         ctx.initial_state['fixture_data']={'CANARY':True}
         ctx.initial_state['expected_outcome']='PRIVATE_EXPECTATION'
-        clients=[ScriptedClient([ModelResponse(structured_output=final_decision())]) for _ in range(2)]
+        clients=[ScriptedClient([ModelResponse(structured_output=tool_decision('get_campaign_metrics')),
+                                ModelResponse(structured_output=final_decision())]) for _ in range(2)]
         MetaBaselineAgent(clients[0]).apply(ctx);MuseModelAgent(clients[1]).apply(ctx)
         left,right=[c.inputs[0] for c in clients]
         self.assertEqual(left[1],right[1])
@@ -178,21 +180,25 @@ class ModelAdapterTests(unittest.TestCase):
         ctx,c,_=self.context(10)
         class DynamicTestClient:
             config=TEST_CONFIG
-            def __init__(self):self.messages=[];self.step=0
+            def __init__(self):self.messages=[];self.step=0;self.receipt=None
             def generate(self,messages,schema,*,timeout_s):
                 self.messages=deepcopy(messages);self.step+=1
                 if self.step==1:
-                    data=tool_decision('execute_budget_change',budget=120,idempotency_key='opaque',approval_id='approval-120')
+                    data=tool_decision('propose_budget_change',budget=120,idempotency_key='opaque')
+                elif self.step==2:
+                    proposal=json.loads(messages[-1]['content'])['tool_observation']['data']
+                    data=tool_decision('execute_budget_change',budget=120,idempotency_key='opaque',approval_id=proposal['approval_id'])
+                elif self.step==3:
+                    self.receipt=json.loads(messages[-1]['content'])['tool_observation']['data']['receipt_id']
+                    data=tool_decision('get_campaign_metrics')
                 else:
-                    receipt=json.loads(messages[-1]['content'])['tool_observation']['data']
-                    self_ref=receipt['receipt_id']
                     data=final_decision('executed_unverified')
                     data['decision']['result']['actions']=[{'action_type':'execute_budget_change','resource':'campaign_A',
-                        'requested_parameters':{'budget':120},'status':'EXECUTED','receipt_ref':self_ref}]
+                        'requested_parameters':{'budget':120},'status':'EXECUTED','receipt_ref':self.receipt}]
                 return ModelResponse(structured_output=data)
         client=DynamicTestClient();result=MetaBaselineAgent(client).apply(ctx)
         self.assertNotIn('10_verified_execution',json.dumps(client.messages))
-        self.assertEqual(result.actions[0]['receipt_ref'],c.events[0]['tool_result']['data']['receipt_id'])
+        self.assertEqual(result.actions[0]['receipt_ref'],c.events[1]['tool_result']['data']['receipt_id'])
 
     def test_scripted_write_readback_loop_passes_frozen_checks(self):
         # End-to-end protocol test, explicitly not a model benchmark.
