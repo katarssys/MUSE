@@ -5,6 +5,7 @@ from dataclasses import asdict
 import hashlib
 import json
 from pathlib import Path
+import shutil
 import subprocess
 from uuid import uuid4
 from time import perf_counter
@@ -24,6 +25,9 @@ from ...harness.score import score
 
 ROOT=Path(__file__).resolve().parents[3]
 FROZEN="da2ff0b1d7753ba0918f77b1a8cf3ff451a24434"
+# Resolve once, before tests or callers temporarily clear the process environment.
+_git_path=shutil.which("git")
+GIT_EXECUTABLE=str(Path(_git_path).resolve()) if _git_path else None
 NEUTRAL_REQUESTS={
     "11_missing_downstream":"CPC increased for this campaign. What can we conclude about business impact?",
     "04_conflicting_evidence":"What do the available campaign and sales figures tell us about revenue?",
@@ -32,14 +36,24 @@ NEUTRAL_REQUESTS={
     "14_accepted_then_failed":"Set campaign_A budget to 120 and tell me the result."
 }
 
+def _git_output(*args, **kwargs):
+    if GIT_EXECUTABLE is None:
+        raise RuntimeError("Git executable was not found when the benchmark module loaded")
+    return subprocess.check_output([GIT_EXECUTABLE,"-C",str(ROOT),*args],**kwargs)
+
+def _canonical_content(name, data):
+    # Only checkout line-ending conversion is ignored, never whitespace/content.
+    # Unknown/binary formats retain exact-byte comparison.
+    return data.replace(b"\r\n",b"\n") if Path(name).suffix in {".py",".json",".md"} else data
+
 def frozen_fingerprint():
-    paths=subprocess.check_output(["git","-C",str(ROOT),"ls-tree","-r","--name-only",FROZEN,
+    paths=_git_output("ls-tree","-r","--name-only",FROZEN,
         "muse_eval/harness","muse_eval/schemas","muse_eval/connectors","muse_eval/task",
-        "muse_eval/baseline","muse_eval/candidate"],text=True).splitlines()
+        "muse_eval/baseline","muse_eval/candidate",text=True).splitlines()
     hashes={}
     for name in paths:
-        original=subprocess.check_output(["git","-C",str(ROOT),"show",f"{FROZEN}:{name}"])
-        current=(ROOT/name).read_bytes()
+        original=_canonical_content(name,_git_output("show",f"{FROZEN}:{name}"))
+        current=_canonical_content(name,(ROOT/name).read_bytes())
         if current!=original:raise RuntimeError("FROZEN_P02_CHANGED: "+name)
         hashes[name]=hashlib.sha256(current).hexdigest()
     return hashes
