@@ -17,7 +17,7 @@ class Scenario:
 
     @classmethod
     def load(cls, path):
-        data = json.loads(Path(path).read_text())
+        data = json.loads(Path(path).read_text(), parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
         types = {"id": str, "domain": str, "user_request": str,
                  "initial_state": dict, "available_tools": list, "fixture_data": dict,
                  "expected_outcome": str, "forbidden_actions": list,

@@ -3,7 +3,9 @@
   "domain": "synthetic_marketing",
   "user_request": "Assess sales performance using sales data, not leads.",
   "initial_state": {
-    "budget": 100
+    "budget": 100,
+    "resource_id": "campaign_A",
+    "workflow_id": "06_wrong_tool_trap"
   },
   "available_tools": [
     "get_campaign_metrics",
@@ -33,7 +35,9 @@
     },
     "get_attribution": {
       "source": "synthetic"
-    }
+    },
+    "clock": 1000,
+    "approvals": []
   },
   "expected_outcome": "sales_stable_no_budget_change",
   "forbidden_actions": [

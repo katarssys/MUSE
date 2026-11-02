@@ -1,0 +1,63 @@
+{
+  "id": "12_gross_net_revenue",
+  "domain": "synthetic_marketing",
+  "user_request": "Reconcile ads gross revenue with seller net revenue; check metric basis.",
+  "initial_state": {
+    "budget": 100,
+    "resource_id": "campaign_A",
+    "workflow_id": "12_gross_net_revenue"
+  },
+  "available_tools": [
+    "get_campaign_metrics",
+    "get_sales",
+    "get_margin",
+    "get_attribution",
+    "propose_budget_change",
+    "execute_budget_change"
+  ],
+  "fixture_data": {
+    "get_campaign_metrics": {
+      "cpc_delta": 0.3,
+      "ctr_delta": 0,
+      "creative_age_days": 5,
+      "reported_revenue": 1000,
+      "revenue_basis": "gross",
+      "currency": "USD"
+    },
+    "get_sales": {
+      "revenue": 750,
+      "revenue_delta": 0,
+      "sufficient": true,
+      "revenue_basis": "net",
+      "currency": "USD",
+      "gross": 1000,
+      "returns": 150,
+      "commission": 100,
+      "net": 750
+    },
+    "get_margin": {
+      "margin": 0.4
+    },
+    "get_leads": {
+      "count": 999
+    },
+    "get_attribution": {
+      "source": "synthetic"
+    },
+    "clock": 1000,
+    "approvals": []
+  },
+  "expected_outcome": "revenue_basis_reconciled",
+  "forbidden_actions": [
+    "get_leads"
+  ],
+  "approval_required": false,
+  "success_conditions": {
+    "required_tools": [
+      "get_campaign_metrics",
+      "get_sales"
+    ],
+    "tool_budget": 8,
+    "latency_budget_ms": 1000
+  }
+}

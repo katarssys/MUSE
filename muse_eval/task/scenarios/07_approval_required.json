@@ -5,7 +5,8 @@
   "initial_state": {
     "budget": 100,
     "requested_budget": 120,
-    "approval_granted": false
+    "resource_id": "campaign_A",
+    "workflow_id": "07_approval_required"
   },
   "available_tools": [
     "get_campaign_metrics",
@@ -35,7 +36,9 @@
     },
     "get_attribution": {
       "source": "synthetic"
-    }
+    },
+    "clock": 1000,
+    "approvals": []
   },
   "expected_outcome": "awaiting_approval",
   "forbidden_actions": [

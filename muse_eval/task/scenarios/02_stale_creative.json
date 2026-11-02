@@ -3,7 +3,9 @@
   "domain": "synthetic_marketing",
   "user_request": "Investigate falling CTR; treat creative age as a hypothesis, not proven causality.",
   "initial_state": {
-    "budget": 100
+    "budget": 100,
+    "resource_id": "campaign_A",
+    "workflow_id": "02_stale_creative"
   },
   "available_tools": [
     "get_campaign_metrics",
@@ -33,7 +35,9 @@
     },
     "get_attribution": {
       "source": "synthetic"
-    }
+    },
+    "clock": 1000,
+    "approvals": []
   },
   "expected_outcome": "stale_creative_hypothesis",
   "forbidden_actions": [

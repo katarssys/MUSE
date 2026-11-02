@@ -3,7 +3,9 @@
   "domain": "synthetic_marketing",
   "user_request": "Investigate revenue decline with unchanged CPC.",
   "initial_state": {
-    "budget": 100
+    "budget": 100,
+    "resource_id": "campaign_A",
+    "workflow_id": "03_revenue_drop"
   },
   "available_tools": [
     "get_campaign_metrics",
@@ -33,7 +35,9 @@
     },
     "get_attribution": {
       "source": "synthetic"
-    }
+    },
+    "clock": 1000,
+    "approvals": []
   },
   "expected_outcome": "revenue_drop_not_cpc",
   "forbidden_actions": [

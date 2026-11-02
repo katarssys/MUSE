@@ -16,10 +16,13 @@ from ..candidate.agent import CandidateAgent
 from .telemetry import Telemetry
 from .check_rules import check_rules
 from .score import score
+from .worker import execute_agent
+from .idempotency import InMemoryActionLedger
+import subprocess
 
 PACKAGE = Path(__file__).resolve().parents[1]
 
-def run(scenario_dir=None, output_root=None, agents=None):
+def run(scenario_dir=None, output_root=None, agents=None, timeout_ms=3000):
     started = perf_counter()
     paths = sorted(Path(scenario_dir or PACKAGE / "task/scenarios").glob("*.json"))
     scenarios = [Scenario.load(p) for p in paths]
@@ -33,24 +36,31 @@ def run(scenario_dir=None, output_root=None, agents=None):
         results[name], traces[name], checks[name], scores[name] = [], [], [], []
         for scenario in scenarios:
             telemetry = Telemetry()
-            connector = MockConnector(scenario, telemetry)
-            context = TaskContext(scenario.id, scenario.user_request, deepcopy(scenario.initial_state),
-                                  list(scenario.available_tools), connector)
+            ledger = InMemoryActionLedger()
+            events = []
             completed = True
-            try:
-                result = agent.apply(context)
-                if not isinstance(result, AgentResult):
-                    raise TypeError("Adapter must return AgentResult")
-            except Exception as exc:
-                completed = False
-                result = AgentResult("Adapter failed", outcome="error", metadata={"exception_type": type(exc).__name__})
-            result.tool_calls = deepcopy(connector.events)
+            worker_spans = []
+            for episode in range(scenario.success_conditions.get("workflow_executions", 1)):
+                connector = MockConnector(scenario, telemetry, ledger)
+                connector.event_prefix = f"episode:{episode+1}:"
+                result, episode_completed, span = execute_agent(agent, scenario, connector, timeout_ms)
+                completed = completed and episode_completed
+                worker_spans.append(span)
+                events.extend(deepcopy(connector.events))
+                if not episode_completed:
+                    break
+            result.tool_calls = deepcopy(events)
+            # Include result serialization in active workflow span; grading is separate.
+            json.dumps(asdict(result), allow_nan=False)
             stats = telemetry.snapshot()
-            report = check_rules(scenario, result, connector.events, completed)
-            trace = Trace(scenario.id, agent.version, timestamp(), connector.events, result.evidence,
+            stats["worker_spans"] = worker_spans
+            evaluation_started = perf_counter()
+            report = check_rules(scenario, result, events, completed)
+            trace = Trace(scenario.id, agent.version, timestamp(), events, result.evidence,
                           result.decision_summary, result.approval_state, result.actions,
                           {"checks": report["checks"]}, result.outcome, stats["total_wall_clock_ms"],
                           stats["model_call_count"], stats["tool_call_count"], stats["estimated_cost"])
+            stats["evaluation_wall_clock_ms"] = (perf_counter() - evaluation_started) * 1000
             results[name].append({"scenario_id": scenario.id, "result": asdict(result), "telemetry": stats})
             traces[name].append(trace.to_dict())
             checks[name].append({"scenario_id": scenario.id, **report})
@@ -61,9 +71,16 @@ def run(scenario_dir=None, output_root=None, agents=None):
                 "scenario_count": len(scenarios), "agents": {k: a.version for k, a in (agents or {"baseline": BaselineAgent(), "candidate": CandidateAgent()}).items()},
                 "scenario_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths},
                 "total_wall_clock_ms": (perf_counter() - started) * 1000,
+                "isolation_assurance": "LOCAL_TRUSTED_ONLY_PROCESS_RPC",
+                "workflow_measurement_scope": "connector/worker initialization, apply, RPC, result transfer, shutdown, result serialization; grading and bulk artifact writes excluded",
+                "source_sha256": {str(p.relative_to(PACKAGE)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(PACKAGE.rglob("*.py"))},
+                "artifact_sha256": {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in output.glob("*.json")},
                 "measurement_scope": "scenario loading, both adapters, checks, scoring and all artifact writes; excludes final timing field update"}
     for filename, data in [("checks", checks), ("score", scores), ("metadata", metadata)]:
         (output / (filename + ".json")).write_text(json.dumps(sanitize(data), indent=2))
+    metadata["artifact_sha256"].update({p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in output.glob("*.json") if p.name != "metadata.json"})
+    metadata["git_head"] = subprocess.check_output(["git", "-C", str(PACKAGE.parent), "rev-parse", "HEAD"], text=True).strip()
+    metadata["git_dirty"] = bool(subprocess.check_output(["git", "-C", str(PACKAGE.parent), "status", "--porcelain"], text=True))
     metadata["total_wall_clock_ms"] = (perf_counter() - started) * 1000
     (output / "metadata.json").write_text(json.dumps(metadata, indent=2))
     return output
@@ -72,8 +89,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--scenarios", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--timeout-ms", type=int, default=3000)
     args = parser.parse_args()
-    output = run(args.scenarios, args.output)
+    output = run(args.scenarios, args.output, timeout_ms=args.timeout_ms)
     print(output)
     scores = json.loads((output / "score.json").read_text())
     return int(any(s["status"] != "passed" for group in scores.values() for s in group))

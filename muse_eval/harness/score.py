@@ -14,9 +14,14 @@ def score(check_report, telemetry, conditions):
                  "latency": min(1, latency_limit / max(telemetry["total_wall_clock_ms"], .001)),
                  "cost": None if cost is None else min(1, cost_limit / max(cost, .000001)),
                  "tool_efficiency": min(1, tool_limit / max(telemetry["tool_call_count"], 1))}
+    mandatory = all(c.values())
+    if not mandatory:
+        for k in ("latency", "cost", "tool_efficiency"):
+            if fractions[k] is not None:
+                fractions[k] = 0.0
     points = {k: None if v is None else WEIGHTS[k] * v for k, v in fractions.items()}
     return {"weights": WEIGHTS, "points": points,
-            "aggregate": sum(v for v in points.values() if v is not None),
+            "aggregate": sum(v for v in points.values() if v is not None) if check_report["admissible"] else None,
             "available_points": sum(WEIGHTS[k] for k, v in points.items() if v is not None),
             "admissible": check_report["admissible"],
-            "status": "failed" if not check_report["admissible"] or not all(c.values()) else "passed"}
+            "status": "DISQUALIFIED" if not check_report["admissible"] else "failed" if not mandatory else "passed"}

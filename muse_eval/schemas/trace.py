@@ -1,12 +1,12 @@
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
 
-SENSITIVE = {"secret", "secrets", "token", "tokens", "password", "credentials", "authorization", "api_key"}
+SENSITIVE = {"secret", "secrets", "token", "tokens", "password", "credentials", "authorization", "api_key", "private_key"}
 
 def sanitize(value):
     """Structured redaction; free text must never contain credentials or reasoning."""
     if isinstance(value, dict):
-        return {k: ("[REDACTED]" if any(s in k.lower() for s in SENSITIVE) else sanitize(v))
+        return {k: ("[REDACTED]" if k not in {"input_tokens", "output_tokens", "cached_tokens"} and any(s in k.lower() for s in SENSITIVE) else sanitize(v))
                 for k, v in value.items() if k.lower() not in {"chain_of_thought", "private_reasoning"}}
     if isinstance(value, list):
         return [sanitize(v) for v in value]
