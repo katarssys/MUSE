@@ -127,3 +127,10 @@ synthetic development fixtures; no held-out or Meta/LLM capability claim.
 
 See HANDOFF_REPORT.md for test names, A–J perturbations, per-scenario outcomes and
 remaining limitations. OS sandbox, live APIs and model integration are out of scope.
+
+## Model adapter stage (separate from frozen P0.2)
+
+Provider-neutral adapters and a five-case neutral-request driver are in
+[agents/model](muse_eval/agents/model/README.md). Current status:
+**MODEL_NOT_CONNECTED**. No real Meta/LLM calls or model benchmark scores.
+Deterministic policies, evaluator, fixtures and original tests remain unchanged.

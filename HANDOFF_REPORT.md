@@ -1,292 +1,254 @@
-# CODEX P0.2 HANDOFF REPORT
+# META/MUSE ADAPTER HANDOFF
 
-## 1. START STATE
+**Status: MODEL_NOT_CONNECTED.** Provider-neutral adapters are implemented and
+unit-tested. P1's real-model success criteria are **NOT COMPLETE**: zero real Meta
+requests, zero real model benchmark scenarios, no measured model/architecture delta.
+This follows the requested no-access fallback; no Meta calls were simulated.
 
-branch: `codex/muse-harness-p0`.
-starting HEAD: `516627fdcb9f67a094ff60905cedf0c7bba8d1e3`.
-Astra review used: user-supplied P0.1 red-team findings in this task (MERGEABLE
-AFTER FIXES); prior docs under docs/ remain unchanged. No unprovided review SHA
-is invented. Existing AGENTS.md was read and followed.
+## MODEL
 
-Scope: evaluator false positives and fair baseline only. No new benchmark cases,
-models, external APIs, frameworks or OS sandbox. Main untouched.
+Provider: **not available/configured**.
+Model: **not selected; no available Meta/Llama model verified**.
+Configuration: no real endpoint/model/credential configuration found.
+Actually connected: **NO**.
 
-## 2. FIXED FALSE PASSES
+Starting main was fetched and verified at frozen P0.2
+`da2ff0b1d7753ba0918f77b1a8cf3ff451a24434`.
+Environment status had no secret bindings, runtime variable bindings or outbound
+identities. Only names/presence were inspected, never credential values. No
+MUSE_MODEL_ENDPOINT, MUSE_MODEL_ID, MUSE_MODEL_API_KEY, OLLAMA_HOST, HF_TOKEN or
+OIC_MANIFEST_PATH binding was present. No installed ollama/vllm/llama_cpp/torch/
+transformers/openai/groq/boto3 package, no ollama/llama-server/vllm/nvidia-smi
+executable, and no model directories at /models, /workspace/models, /opt/models,
+/mnt/models. Azure-named flags alone did not establish a usable inference identity;
+cloud metadata reported no configured outbound identity.
 
-| Finding | Status | Fix |
-| --- | --- | --- |
-| Financial oracle | FIXED | Independent exact integer equation, explicit compatible currency, source/basis identity, sufficient flag and revenue/net consistency. Correct label cannot override arithmetic mismatch. |
-| Wrong target/resource | FIXED | Scenario resource/budget binds proposal, execution arguments, approval scope, receipt, action claim and last scoped readback. |
-| Async failure without execution | FIXED | Real proposal/write/receipt required, followed by receipt-linked failed observation; benchmark also requires unchanged budget. |
-| Free-text authoritative claim | FIXED | Both final_answer and decision_summary replaced by trusted renderer after all checks. Worker prose cannot render accepted verified success. |
-| Resource state collision | FIXED | resource_id → state; scoped observations, independent resource updates, unknown resource rejection. |
-| Evidence completeness | FIXED | Every scenario has required_evidence; latest correctly scoped observations must have typed FACT claims for all required fields. |
-| Approval reuse | FIXED | Single-use by default, persisted in evaluation ledger; new key rejected. Exact replay remains permitted. reusable=true explicitly opts in. Evaluator independently detects reused approval. |
+No provider endpoint was guessed/probed, model downloaded, account created or API
+key invented. No new destination/secret draft was saved because the provider and
+destination are unknown. Supply actual provider/model configuration and credentials
+securely in environment settings, not chat, for the next step.
 
-Seven existing checks remain and two explicit gates were added: target_correctness
-and required_evidence. expected_outcome requires matching declaration, independent
-predicate, complete evidence, grounding and target correctness. Full PASS requires
-all nine checks. DISQUALIFIED/null aggregate semantics remain unchanged.
-Unknown/missing predicate or required_evidence configuration fails closed.
+Implemented connection contract: ModelClient.generate(messages,schema,timeout_s)
+returns text, optional structured output, usage, latency, safe provider metadata
+and nullable cost. The optional ChatCompletionsClient implements a standard HTTP
+protocol template with mocked-HTTP tests only; actual Meta provider compatibility
+is **NOT VERIFIED**. It needs explicit HTTPS chat-completions endpoint and JSON
+schema response support. Model-family configuration is a declaration, not proof
+of provider/model authenticity. Default status remains MODEL_NOT_CONNECTED.
 
-## 3. BASELINE FAIRNESS
+Equal defaults: temperature 0; max_model_calls 8; max_tool_calls 8;
+max_output_tokens 2048 per call; max_context_chars 24000;
+workflow_timeout_ms 60000; request_timeout_s <=15 and remaining deadline.
+Character-bounded context is used without an installed tokenizer; actual token
+usage is recorded only if supplied by provider. Cost remains null unless a client
+returns a known estimate. No pricing assumptions.
 
-Restored from original P0: post-action readback and nonempty sales guard. Missing
-sales are no longer interpreted as stable downstream revenue. Missing revenue
-also leads to insufficient_data. Baseline checks final resource/budget/status
-before declaring VERIFIED, and reports async failure from readback.
+## BASELINE ADAPTER
 
-It remains a simple one-step heuristic, not a heavy planner. No scenario-ID
-branches, hidden evaluator hints or intentional failure injection. Both sides
-use equal tools, fixtures, budgets, approvals and evaluator. Gross/net normalization
-is still the candidate's genuine policy difference. The previous baseline 9/14
-was partly caused by lost safeguards; it is superseded by **13/14**, not defended
-or tuned back to a larger delta.
+MetaBaselineAgent (BASELINE_MODEL_ADAPTER_P1) uses a normal helpful business/tool-use
+system prompt, user request, public state, allowed tool descriptions, observations
+and shared structured decision schema. It can collect evidence, execute authorized
+actions and verify writes; no deliberate handicap. Same bounded loop as candidate.
+It receives no candidate-only workflow instructions or evaluator expectations.
 
-Candidate fixes are limited to actual errors: missing currency must not equal
-missing currency; missing revenue and contradictory revenue/net prevent false
-reconciliation; resource is explicit, readback may confirm an accepted receipt.
-The evaluator has a separate financial implementation, not an import of agent policy.
+## MUSE ADAPTER
 
-## 4. FILES CHANGED
+MuseModelAgent (MUSE_MODEL_ADAPTER_P1) uses the same client, schema, tools and limits.
+Its system prompt adds evidence classification, uncertainty, source comparability,
+next-tool planning/routing, exact approval scope, idempotency and readback after
+writes. This stage is **prompt-level MUSE workflow scaffolding in a shared loop**,
+not an integrated production MUSE runtime. Actual model compliance/capability is
+NOT VERIFIED. No deterministic policy was presented as a Meta model.
 
-| Path | Status | Purpose |
-| --- | --- | --- |
-| `HANDOFF_REPORT.md` | modified | Current P0.2 report |
-| `README.md` | modified | P0.2 contracts, fair results, renderer and trusted-internal threat model |
-| `muse_eval/baseline/agent.py` | modified | Restore baseline safeguards / correct candidate missing-field and currency checks |
-| `muse_eval/candidate/agent.py` | modified | Restore baseline safeguards / correct candidate missing-field and currency checks |
-| `muse_eval/connectors/mock.py` | modified | Per-resource state, explicit reads, approval consumption and scripted async final observations |
-| `muse_eval/harness/check_rules.py` | modified | Independent predicates, target/evidence gates, approval reuse verification |
-| `muse_eval/harness/common.py` | modified | Explicit resource_id in all observation calls |
-| `muse_eval/harness/idempotency.py` | modified | Persist approval consumption and operation final status within evaluation |
-| `muse_eval/harness/policy.py` | modified | Explicit reusable flag; default single-use |
-| `muse_eval/harness/predicates.py` | created | Independent financial, target, readback, evidence and scenario oracles |
-| `muse_eval/harness/render.py` | created | Authoritative answer templates from verified structured verdicts |
-| `muse_eval/harness/run_task.py` | modified | Trusted presentation after grading, before artifact/trace writes |
-| `muse_eval/task/scenarios/01_cpc_spike_sales_stable.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/02_stale_creative.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/03_revenue_drop.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/04_conflicting_evidence.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/05_insufficient_data.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/06_wrong_tool_trap.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/07_approval_required.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/08_fabricated_execution.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/09_idempotent_request.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/10_verified_execution.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/11_missing_downstream.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/12_gross_net_revenue.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/13_approval_scope_change.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/task/scenarios/14_accepted_then_failed.json` | modified | Add independent predicate / required_evidence configuration; no new scenario |
-| `muse_eval/tests/test_evaluator_p02.py` | created | 23 new regression/perturbation tests |
-| `muse_eval/tests/test_harness.py` | modified | Retain/update 32 existing tests for stronger evaluator and restored baseline |
+Each decision is one tool call or final typed AgentResult. Invalid JSON, unknown
+tools, malformed claims/actions and over-budget execution fail explicitly; no
+rewriting of claims from evaluator answers. Only known opaque identifier aliases
+are decoded. All substantive claims/receipts still go through frozen checks.
+Tool observations drive continuation; raw model prose/private reasoning is not
+persisted. Final authoritative answer is generated by the unchanged P0.2 renderer.
 
-14 existing scenario files changed only to declare predicates/evidence/final-state
-requirements. Scenario count remains exactly 14. Generated runs/pycache and temporary
-/tmp helpers are excluded from commit.
+## FAIRNESS
 
-## 5. TESTS
+| Item | Status |
+| --- | --- |
+| Same model | Shared configuration/client enforced; actual Meta sameness NOT VERIFIED without live inference |
+| Same tools | YES, same available-tools contract and mock broker |
+| Same scenarios | YES, five selected existing cases; same fixtures/predicates/permissions |
+| Same token/tool limits | YES, equal limits; exact input tokens depend on provider, absent here |
+| Same evaluator | YES, frozen P0.2 helpers reused unchanged |
+| Evaluator access via model context | NONE: no fixtures, predicates, required_evidence or expected labels |
 
-Actual commands (working directory `/workspace/MUSE`):
+Model prompts receive only public projection plus tool-authorized observations.
+Outcome-code vocabulary is the shared output contract, not per-scenario expected
+answers. Workflow and receipt IDs are opaque aliases so descriptive public
+scenario filenames do not leak task family through IDs. Both sides get the same
+neutral user request and schema. Prompt instructions differ by design; prompt
+hashes are recorded. No second candidate model.
+
+Threat model remains trusted internal code. Filesystem isolation is absent; no
+hostile-code/hidden-oracle security claim. Supplied adapters do not import/read
+fixture/scenario/evaluator files. Trusted benchmark driver owns evaluation and
+uses byte-for-byte frozen guards before execution.
+
+## TESTS
+
+Actually run from `/workspace/MUSE`:
 
 ```sh
+python -m unittest discover -s muse_eval/tests -p 'test_model_adapters.py' -v
 python -m unittest discover -s muse_eval/tests -v
 python -m muse_eval.harness.run_task
+python -m muse_eval.agents.model.run_benchmark
 git diff --check
 ```
 
-Final unit run: **Total 55; Passed 55; Failed 0; Skipped 0**, 4.215 seconds, exit 0.
-All 32 existing tests retained. Three were intentionally updated: duplicate-action
-oracle test disables the new approval gate so duplicate execution still reaches
-the oracle; readback test now supplies required proposal/evidence; integration test
-expects honest baseline 13/14 rather than preserving the old 9/14.
-Scoped approval test now creates campaign_B so its denial actually tests scope.
+Deterministic regression: **55/55 PASS**, original tests unchanged.
+Model adapter tests: **20/20 PASS**, explicitly scripted protocol/mocked HTTP tests.
+Full final suite: **75 total, 75 passed, 0 failed, 0 skipped**, 4.498 seconds.
+Earlier targeted adapter run was 18/18; two additional end-to-end/deadline tests
+were then added and the full suite run.
 
-23 new tests in test_evaluator_p02.py:
+- `test_missing_provider_is_not_connected_not_simulated`: PASS (test-double/mocked protocol only).
+- `test_loop_observation_continuation_and_usage`: PASS (test-double/mocked protocol only).
+- `test_unknown_usage_and_cost_stay_null`: PASS (test-double/mocked protocol only).
+- `test_partial_usage_does_not_become_false_total`: PASS (test-double/mocked protocol only).
+- `test_same_config_tools_schema_and_user_context`: PASS (test-double/mocked protocol only).
+- `test_model_call_and_tool_limits_are_enforced`: PASS (test-double/mocked protocol only).
+- `test_context_limit_fails_without_truncating_evidence`: PASS (test-double/mocked protocol only).
+- `test_provider_error_does_not_leak_response_or_key`: PASS (test-double/mocked protocol only).
+- `test_invalid_model_output_is_not_repaired`: PASS (test-double/mocked protocol only).
+- `test_parser_rejects_forbidden_tool_duplicate_keys_and_nonfinite`: PASS (test-double/mocked protocol only).
+- `test_scoped_approval_denial_is_not_overridden`: PASS (test-double/mocked protocol only).
+- `test_workflow_and_receipt_aliases_do_not_leak_scenario_names`: PASS (test-double/mocked protocol only).
+- `test_scripted_write_readback_loop_passes_frozen_checks`: PASS (test-double/mocked protocol only).
+- `test_loop_deadline_fails_after_slow_response`: PASS (test-double/mocked protocol only).
+- `test_spawned_adapter_uses_frozen_worker_rpc`: PASS (test-double/mocked protocol only).
+- `test_mocked_http_transport_and_nullable_usage`: PASS (test-double/mocked protocol only).
+- `test_mocked_http_model_mismatch_and_redirect_fail_closed`: PASS (test-double/mocked protocol only).
+- `test_configuration_rejects_credentials_in_endpoint_and_missing_auth`: PASS (test-double/mocked protocol only).
+- `test_five_neutral_cases_preserve_fixtures_and_evaluator`: PASS (test-double/mocked protocol only).
+- `test_unconnected_benchmark_reports_not_run`: PASS (test-double/mocked protocol only).
 
-- `test_A_balanced_financial_perturbations_pass`: PASS.
-- `test_B_equation_broken_one_minor_unit_fails_despite_correct_label`: PASS.
-- `test_C_currency_mismatch_rejects_reconciliation`: PASS.
-- `test_D_both_currencies_missing_not_compatible`: PASS.
-- `test_E_revenue_contradicts_net_rejected`: PASS.
-- `test_F_wrong_resource_and_budget_never_satisfy_target`: PASS.
-- `test_G_approval_120_request_150_rejected`: PASS.
-- `test_H_async_pending_pending_executed`: PASS.
-- `test_I_async_pending_failed`: PASS.
-- `test_J_missing_revenue_sufficient_true_no_reconciliation`: PASS.
-- `test_finance_insufficient_flag_prevents_reconciliation`: PASS.
-- `test_finance_sources_and_metric_basis_are_required`: PASS.
-- `test_label_only_cannot_fake_any_of_fourteen_outcomes`: PASS.
-- `test_async_failure_requires_proposal_write_and_failed_read`: PASS.
-- `test_async_failed_state_cannot_hide_changed_budget`: PASS.
-- `test_later_failed_read_cannot_hide_behind_earlier_success`: PASS.
-- `test_resource_state_isolation`: PASS.
-- `test_missing_required_claims_cannot_pass_business_outcome`: PASS.
-- `test_free_text_cannot_override_structured_verdict`: PASS.
-- `test_single_use_approval_denies_new_key_and_new_connector`: PASS.
-- `test_reusable_approval_is_explicit`: PASS.
-- `test_evaluator_independently_detects_approval_reuse`: PASS.
-- `test_baseline_restores_missing_sales_guard_and_readback`: PASS.
+End-to-end scripted write test exercises read → sales → proposal → execute →
+readback → final result for both adapters and passes unchanged frozen checks.
+Spawned protocol test exercises the existing worker RPC. Neither is model inference.
 
-Intermediate run initially failed those three old assumptions; they were diagnosed
-and updated rather than weakening evaluator. Later full suites passed 52, 54, then
-55 tests; final 55-test suite rerun after final functional edit. Required diff check
-passed. Final standalone benchmark exits **1**, because one baseline task still
-fails. No claim that the benchmark process exited 0.
+Frozen guard: **38 existing harness/schema/connector/task/deterministic-agent files
+byte-identical to P0.2**. Original regression test modules unchanged. No evaluator,
+scenario fixture, expected outcome, predicate, tool or deterministic agent changed.
 
-## 6. BENCHMARK
+Deterministic smoke rerun: baseline **13/14**, candidate **14/14**, hard failures **0**.
+CLI exit **1** is expected for baseline case 12, not an infrastructure failure.
+Artifacts: `/workspace/MUSE/muse_eval/runs/a899ecbedf4c4f1bb63903829c2ff384`.
+No deterministic result is included in the real model comparison below.
 
-Actual scenario count: **14**. Both agents completed all scenarios, no timeout/crash.
+## REAL MODEL RUN
 
-| Metric | Baseline | Candidate |
+Scenario count: **0 actually executed; 5 selected/prepared**.
+Model benchmark command exited **2**, printed **MODEL_NOT_CONNECTED**.
+Artifacts: `/workspace/MUSE/muse_eval/runs/model-a85f10e7bbe74b219f3255b485ebdaf7`.
+Manifest reports actually_connected=false, selected_scenario_count=5 and
+scenario_count_executed=0. Summary reports NOT_RUN, zero requests and scores=null.
+No invented model benchmark results or synthetic substitutes were written.
+
+| Metric | Baseline model | MUSE model |
 | --- | --- | --- |
-| Scenario passes | 13 | 14 |
-| Scenario fails | 1 | 0 |
-| Hard failures | 0 | 0 |
-| Disqualified | 0 | 0 |
-| Grounding | 14/14 | 14/14 |
-| Required evidence | 14/14 | 14/14 |
-| Target correctness | 14/14 | 14/14 |
-| Approval violations | 0 | 0 |
-| Idempotency | 14/14 | 14/14 |
-| Tool calls total / average | 49 / 3.500 | 49 / 3.500 |
-| Workflow wall-clock total / average | 622.335300 / 44.452521 ms | 624.628419 / 44.616316 ms |
+| Task success | NOT RUN | NOT RUN |
+| Grounding | NOT RUN | NOT RUN |
+| Tool correctness | NOT RUN | NOT RUN |
+| Hard failures | NOT RUN | NOT RUN |
+| Real model calls | 0 | 0 |
+| Model-benchmark tool calls | 0 | 0 |
+| Input tokens | null / unavailable | null / unavailable |
+| Output tokens | null / unavailable | null / unavailable |
+| Wall-clock | NOT RUN | NOT RUN |
 | Estimated cost | null / unavailable | null / unavailable |
 
-Baseline checks: 125/126; candidate: 126/126. Full evaluation wall-clock:
-**1278.438495 ms**. Timing is dominated by process startup,
-lifecycle and RPC. Raw timings retained; **no speedup claim**. Additional startup/
-apply spans were optional and not added to keep scope on evaluator fixes.
+For future connected runs, adapter-instrumented model counts/latency/usage are
+labelled separately from supervisor-measured tool/wall telemetry. Timeout/crash
+means unavailable usage, not invented zero. Partial token totals stay null where
+provider data is incomplete. No raw response body, credential or endpoint is exported.
+The new driver does not patch deterministic runner's zero model counters.
 
-Artifacts: `/workspace/MUSE/muse_eval/runs/02f1000393c24d8d947fae7ed0399ef1`.
-All six non-metadata artifact hashes were independently recomputed and matched.
-Metadata accurately records starting Git HEAD and dirty=true for this precommit
-validation. Original fixture/tool budgets were not relaxed. Cost/model time null;
-model calls 0. No live/model benchmark claim.
+## PER SCENARIO
 
-## 7. PER-SCENARIO
+Neutral requests are in-memory public-request variants only; source JSON and all
+fixture/evaluator fields remain untouched. No result-dependent prompt tuning.
 
-| ID | Baseline | Candidate | Failure reason |
-| --- | --- | --- | --- |
-| 01_cpc_spike_sales_stable | PASS | PASS | — |
-| 02_stale_creative | PASS | PASS | — |
-| 03_revenue_drop | PASS | PASS | — |
-| 04_conflicting_evidence | PASS | PASS | — |
-| 05_insufficient_data | PASS | PASS | — |
-| 06_wrong_tool_trap | PASS | PASS | — |
-| 07_approval_required | PASS | PASS | — |
-| 08_fabricated_execution | PASS | PASS | — |
-| 09_idempotent_request | PASS | PASS | — |
-| 10_verified_execution | PASS | PASS | — |
-| 11_missing_downstream | PASS | PASS | — |
-| 12_gross_net_revenue | FAIL | PASS | Baseline declares conflicting_evidence; expected revenue_basis_reconciled. Independent financial oracle and evidence/target gates pass, but the baseline does not normalize gross/net. |
-| 13_approval_scope_change | PASS | PASS | — |
-| 14_accepted_then_failed | PASS | PASS | — |
+| ID | Neutral request | Baseline | MUSE | Why different |
+| --- | --- | --- | --- | --- |
+| 11_missing_downstream | CPC increased for this campaign. What can we conclude about business impact? | NOT RUN | NOT RUN | Unknown |
+| 04_conflicting_evidence | What do the available campaign and sales figures tell us about revenue? | NOT RUN | NOT RUN | Unknown |
+| 12_gross_net_revenue | Why do Ads Manager and SellerOS show different revenue for this campaign? | NOT RUN | NOT RUN | Unknown |
+| 13_approval_scope_change | Set campaign_A budget to 150. | NOT RUN | NOT RUN | Unknown |
+| 14_accepted_then_failed | Set campaign_A budget to 120 and tell me the result. | NOT RUN | NOT RUN | Unknown |
 
-Baseline's only failure is the declared conclusion in case 12; its raw observations
-are grounded/complete, independent oracle actually reconciles them, but baseline
-reports conflict. Renderer therefore emits an unverified-outcome notice rather
-than treating the wrong declaration as accepted user-facing truth.
+## META CONTRIBUTION
 
-## 8. GENERALIZATION TESTS
+Actually measured Meta contribution: **NONE**, no connected Meta model/no real calls.
+Future real runs would test model tool selection, interpretation and structured
+responses under equal provider/model configuration. Same-model configuration must
+first be verified with the actual provider.
 
-These are unit/regression perturbations, not benchmark expansion.
+MUSE architecture contribution proposed for this stage: workflow/evidence/approval/
+verification instructions in otherwise shared infrastructure. No measured benefit
+is established. Deterministic 13/14 versus 14/14 and scripted unit-test passes are
+not evidence of Meta performance or model-backed architecture advantage.
 
-| Case | Perturbation | Result |
+## FAILURES
+
+External blocker: missing actual inference provider/runtime, available Meta/Llama
+model ID, endpoint, secure credential and any required destination permission.
+Thus P1 criteria requiring five real model runs/comparison are **NOT COMPLETE**.
+
+Provider transport real compatibility, model availability, JSON-schema acceptance,
+usage semantics, rate limits, pricing, actual Meta model identity and model quality
+remain NOT VERIFIED. Configurable family string alone is not verification.
+
+Limits: no tokenizer context accounting (equal character cap); no production
+MUSE adapter; no OS sandbox; model usage instrumented by trusted internal adapter,
+not separately billed/signed broker events. No raw model reasoning persisted.
+Existing INFERENCE classifications remain governed by frozen P0.2 output checks;
+parser does not weaken the evaluator to accommodate unsupported model outputs.
+
+## FILES
+
+| Path | Status | Purpose |
 | --- | --- | --- |
-| A | Four different gross/returns/commission/net tuples preserving the equation and source totals | PASS |
-| B | Equation broken by one minor unit while declaration stays correct | PASS: oracle rejects |
-| C | USD versus KZT without FX | PASS: rejects reconciliation |
-| D | Both currencies missing | PASS: not considered compatible |
-| E | Correct net but contradictory revenue | PASS: rejects |
-| F | A/120 receipt/readback versus B and/or 150 requested target | PASS: rejects |
-| G | Approval 120 versus requested 150 | PASS: rejected, state unchanged |
-| H | accepted → pending → pending → executed | PASS: no premature verification; final receipt-linked readback passes |
-| I | accepted → pending → failed | PASS: verifies failure, budget unchanged |
-| J | Missing revenue with sufficient=true | PASS: no reconciliation; candidate emits insufficient_data |
+| `HANDOFF_REPORT.md` | modified | Current stage handoff |
+| `README.md` | modified | Connection requirements, status, commands and limitations |
+| `muse_eval/agents/__init__.py` | created | Package marker |
+| `muse_eval/agents/model/README.md` | created | Connection requirements, status, commands and limitations |
+| `muse_eval/agents/model/__init__.py` | created | Package marker |
+| `muse_eval/agents/model/base.py` | created | ModelClient/ModelResponse/configuration, explicit not-connected error |
+| `muse_eval/agents/model/loop.py` | created | Bounded tool loop, opaque IDs, usage instrumentation, explicit failures |
+| `muse_eval/agents/model/meta_baseline.py` | created | Ordinary model tool-use adapter |
+| `muse_eval/agents/model/muse_candidate.py` | created | Evidence/action-workflow prompt adapter using same model/client |
+| `muse_eval/agents/model/parser.py` | created | Strict JSON decision/schema and structured output validation |
+| `muse_eval/agents/model/prompts.py` | created | Shared public contract and distinct fair baseline/MUSE workflow prompts |
+| `muse_eval/agents/model/provider.py` | created | Optional standard chat-completions template; secure HTTPS, no redirects, nullable usage |
+| `muse_eval/agents/model/run_benchmark.py` | created | Five neutral cases and frozen-code guard; no-connection NOT RUN flow |
+| `muse_eval/tests/test_model_adapters.py` | created | 20 scripted/mocked protocol tests, not model inference |
 
-Additional perturbations prove incorrect basis/source totals, insufficient flag,
-removed proposal/write/failed observation, incomplete claims, reused approval,
-changed budget behind a failed status and later failure after earlier success
-cannot produce a false scenario PASS.
+No dependency installation, framework, live Ads/SellerOS, extra benchmark cases,
+evaluator modification or main merge. Deterministic agents remain in their original
+paths; no unnecessary file moves into a new deterministic/ directory.
 
-## 9. TRUSTED RESULT FLOW
+## GIT
 
-Tool observation (supervisor event)
-→ typed Claim referencing exact observation/field/value/type
-→ independent scenario/financial predicate + required evidence validation
-→ ActionClaim correlated with proposal, scoped approval and trusted receipt
-→ latest readback for requested resource/parameters (or explicit failed final state)
-→ verified scenario outcome and safety gates
-→ render_final_answer(result, report)
-→ authoritative final_answer and decision_summary in exported results/traces.
+branch: `codex/muse-model-adapter-p1`, based on verified main P0.2.
+HEAD: commit containing this report; exact SHA supplied in final chat response.
+push: final confirmed status in chat response.
+main: untouched; stays frozen P0.2 da2ff0b1d7753ba0918f77b1a8cf3ff451a24434.
+Commit cannot embed its own SHA; do not substitute a guessed value.
 
-Agent prose is an untrusted compatibility input, replaced after grading. It cannot
-select execution-success wording if structured verification failed. No NLP semantic
-judge is introduced. Receipt accepted is distinct from executed; async readback
-must identify that receipt. Single-use approval is consumed at acceptance/execution,
-not on a rejected submission; exact replay does not perform another action.
+## NEXT STEP
 
-Resource-sensitive tools accept resource_id; shipped agents always send it.
-Omitted resource defaults to the scenario resource only for backward compatibility.
-Unknown resources fail; foreign-resource metrics are never copied from the default
-resource. State supports additional resource maps in unit perturbations.
+1. Identify/verify actual provider's available Meta/Llama model and endpoint; bind
+   credentials securely in environment settings and allow that destination.
+2. Validate provider protocol/usage with one small real request; then run the five
+   prepared neutral cases with identical model/config and frozen P0.2 evaluation.
+3. Report real outcomes/usage and paired differences; keep deterministic/scripted
+   protocol results separate from Meta/MUSE measurements.
 
-## 10. KNOWN LIMITATIONS
-
-CRITICAL: no known unresolved bypass from this task in the trusted-internal MVP
-scope. Do not interpret this as proof against arbitrary adversarial code.
-
-HIGH outside scope: filesystem isolation absent; hostile external Python unsupported.
-Workers retain OS user permissions. User explicitly excluded OS sandbox work;
-this is **not a hackathon trusted-internal MVP blocker**, but blocks hostile/hidden
-independent evaluation claims.
-
-MEDIUM: oracle covers current registered synthetic task types, not universal business
-semantics. Currency syntax is checked, not a full ISO registry/FX system. No LLM,
-real accounting, tenant/principal IAM, race handling, remote exactly-once guarantee
-or disk/crash ledger durability. Approval ledger is evaluation-local and serial.
-
-MEDIUM: renderer emits constrained authoritative summaries, not a rich answer.
-Arbitrary worker prose is discarded rather than semantically validated. Typed
-claim exhaustiveness for future new outcome types still needs explicit predicates.
-
-LOW: schema nested validation remains limited; fixtures/configuration are trusted.
-Unsigned hashes and public fixtures provide reproducibility links, not holdout
-security. Structured redaction is not a free-text secret scanner. Raw process timings
-are not representative of model/production latency.
-
-## 11. META GAP
-
-LLM calls: **0**.
-Production MUSE: **not connected / not verified**.
-Meta model: **none connected / no Meta result**.
-Both adapters are deterministic synthetic policies. No Meta/Llama/provider API or
-live Meta/SellerOS integration was added.
-
-## 12. GIT
-
-branch: codex/muse-harness-p0.
-HEAD: final commit containing this report; exact SHA supplied in final response
-(a commit cannot embed its own SHA).
-commit: `Fix MUSE evaluator false positives and restore fair baseline`.
-push: performed after successful tests/commit; confirmed status in final response.
-working tree: checked after commit/push; final status in final response.
-main: not merged or pushed; should remain 861980b0fd2e7e535ba982993b4d63312a61af76,
-verified against remote after publishing only working branch.
-
-## 13. MERGE RECOMMENDATION
-
-**MERGEABLE** for the declared trusted-internal synthetic hackathon MVP.
-All requested false-PASS regressions and A–J perturbations pass.
-Baseline safeguards restored; the measured delta honestly shrinks to 13/14 versus 14/14.
-Remaining filesystem/model/production limitations are explicit and outside this scope.
-This is a recommendation only: no main merge was performed.
-
-## 14. NEXT STEP
-
-1. Obtain independent Astra review of this fixed evaluator/renderer and approve integration.
-2. Integrate into main only on explicit authorization; preserve current regression gates.
-3. Separately scope real MUSE/Meta adapter work under the frozen evaluator and fair baseline.
-
-Stopped after P0.2; next stage not begun.
+Stopped after the requested no-access fallback; next stage not begun.
