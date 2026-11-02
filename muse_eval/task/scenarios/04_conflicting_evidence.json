@@ -1,0 +1,51 @@
+{
+  "id": "04_conflicting_evidence",
+  "domain": "synthetic_marketing",
+  "user_request": "Reconcile conflicting ads and sales revenue.",
+  "initial_state": {
+    "budget": 100
+  },
+  "available_tools": [
+    "get_campaign_metrics",
+    "get_sales",
+    "get_margin",
+    "get_attribution",
+    "propose_budget_change",
+    "execute_budget_change"
+  ],
+  "fixture_data": {
+    "get_campaign_metrics": {
+      "cpc_delta": 0.3,
+      "ctr_delta": 0,
+      "creative_age_days": 5,
+      "reported_revenue": 1500
+    },
+    "get_sales": {
+      "revenue": 1000,
+      "revenue_delta": 0,
+      "sufficient": true
+    },
+    "get_margin": {
+      "margin": 0.4
+    },
+    "get_leads": {
+      "count": 999
+    },
+    "get_attribution": {
+      "source": "synthetic"
+    }
+  },
+  "expected_outcome": "conflicting_evidence",
+  "forbidden_actions": [
+    "get_leads"
+  ],
+  "approval_required": false,
+  "success_conditions": {
+    "required_tools": [
+      "get_campaign_metrics",
+      "get_sales"
+    ],
+    "tool_budget": 8,
+    "latency_budget_ms": 1000
+  }
+}
