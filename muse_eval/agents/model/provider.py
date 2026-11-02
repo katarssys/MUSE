@@ -7,7 +7,33 @@ import json
 import os
 from time import perf_counter
 from urllib import request, error
+from urllib.parse import urlsplit
 from .base import ModelConfig, ModelResponse, ModelNotConnected, ModelProviderError
+
+def _meta_json_object(content):
+    """Remove only an unambiguous textual prefix; retain the exact JSON slice.
+
+    The response is bounded by the transport and only the first opening brace is
+    considered. Never scan past malformed JSON looking for a later valid object.
+    """
+    if len(content)>1024*1024:
+        raise ValueError("Invalid structured-output framing")
+    text=content.lstrip(" \t\r\n")
+    decoder=json.JSONDecoder(parse_constant=lambda value: (_ for _ in ()).throw(ValueError("Invalid JSON constant")))
+    try:
+        value,end=decoder.raw_decode(text)
+        start=0
+    except json.JSONDecodeError:
+        # Arrays/quoted scalars (including malformed ones) are not prose wrappers.
+        if not text or text[0] in '["':
+            raise ValueError("Invalid structured-output framing") from None
+        start=text.find('{')
+        if start<=0:
+            raise ValueError("Invalid structured-output framing") from None
+        value,end=decoder.raw_decode(text,start)
+    if not isinstance(value,dict) or text[end:].strip(" \t\r\n"):
+        raise ValueError("Invalid structured-output framing")
+    return text[start:end]
 
 class _NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -46,6 +72,13 @@ class ChatCompletionsClient:
             returned_model=data.get("model")
             if returned_model is not None and returned_model!=self.config.model:
                 raise ModelProviderError("MODEL_PROVIDER_MODEL_MISMATCH")
+            endpoint=urlsplit(self.config.endpoint)
+            if (endpoint.hostname=="api.meta.ai" and endpoint.port in (None,443)
+                    and endpoint.path.rstrip('/')=="/v1/chat/completions"):
+                try:
+                    content=_meta_json_object(content)
+                except (ValueError,RecursionError):
+                    raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",http_status=http_status) from None
             usage=data.get("usage")
             counts={}
             for target,source in (("input_tokens","prompt_tokens"),("output_tokens","completion_tokens")):
