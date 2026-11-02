@@ -28,8 +28,8 @@ class ModelConfig:
         url = urlsplit(self.endpoint)
         if url.scheme != "https" or not url.hostname or url.username or url.password or url.query or url.fragment:
             raise ValueError("An explicit HTTPS chat-completions endpoint without credentials/query is required")
-        if not self.provider or not self.model or self.family != "meta_llama":
-            raise ValueError("Explicit provider and confirmed Meta/Llama model family required")
+        if not self.provider or not self.model or self.family not in ("meta_llama", "meta_muse"):
+            raise ValueError("Explicit provider and model required; family must be meta_llama or meta_muse")
         if not all(type(v) is int and v > 0 for v in (self.max_output_tokens,self.max_model_calls,self.max_tool_calls,self.max_context_chars,self.workflow_timeout_ms)):
             raise ValueError("Invalid limits")
         if not 0 <= self.temperature <= 2 or not 0 < self.request_timeout_s <= 60:

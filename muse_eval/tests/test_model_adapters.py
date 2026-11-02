@@ -47,6 +47,22 @@ class SpawnProtocolProbe(MetaBaselineAgent):
                                         ModelResponse(structured_output=final_decision())]))
 
 class ModelAdapterTests(unittest.TestCase):
+    def test_configuration_accepts_explicit_meta_families(self):
+        self.assertEqual(replace(TEST_CONFIG,family='meta_llama').family,'meta_llama')
+        config=ModelConfig(provider='Meta Model API',model='muse-spark-1.3',
+                           endpoint='https://api.meta.ai/v1/chat/completions',family='meta_muse')
+        self.assertEqual(config.family,'meta_muse')
+        self.assertEqual(config.model,'muse-spark-1.3')
+        self.assertEqual(config.provider,'Meta Model API')
+        for family in ('meta_llama','meta_muse'):
+            with self.subTest(family=family),self.assertRaises(ValueError):
+                replace(TEST_CONFIG,provider='',family=family)
+
+    def test_configuration_rejects_unknown_meta_families(self):
+        for family in ('', 'unknown', 'meta', 'llama', 'meta_spark', 'META_MUSE', 'qwen', None, 1, []):
+            with self.subTest(family=family),self.assertRaises(ValueError):
+                replace(TEST_CONFIG,family=family)
+
     def context(self,number=11):
         s=Scenario.load(next((PACKAGE/'task/scenarios').glob(f'{number:02d}_*.json')))
         c=MockConnector(s,Telemetry())
