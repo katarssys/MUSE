@@ -8,20 +8,20 @@ class InvalidModelOutput(ValueError):
     pass
 
 CLAIM_SCHEMA={"type":"object","additionalProperties":False,"properties":{
-    "type":{"enum":["metric","hypothesis","unknown"]},"subject":{"type":"string"},
+    "type":{"type":"string","enum":["metric","hypothesis","unknown"]},"subject":{"type":"string"},
     "metric":{"type":"string"},"value":{"type":["string","number","boolean","null"]},
     "source_refs":{"type":"array","items":{"type":"string"}},
-    "certainty":{"enum":["FACT","SIGNAL","INFERENCE","HYPOTHESIS","UNKNOWN"]}},
+    "certainty":{"type":"string","enum":["FACT","SIGNAL","INFERENCE","HYPOTHESIS","UNKNOWN"]}},
     "required":["type","subject","metric","value","source_refs","certainty"]}
 ACTION_SCHEMA={"type":"object","additionalProperties":False,"properties":{
-    "action_type":{"enum":["execute_budget_change"]},"resource":{"type":"string"},
+    "action_type":{"type":"string","enum":["execute_budget_change"]},"resource":{"type":"string"},
     "requested_parameters":{"type":"object","additionalProperties":False,"properties":{"budget":{"type":"number"}},"required":["budget"]},
-    "status":{"enum":["PROPOSED","ACCEPTED","EXECUTED","VERIFIED","FAILED"]},
+    "status":{"type":"string","enum":["PROPOSED","ACCEPTED","EXECUTED","VERIFIED","FAILED"]},
     "receipt_ref":{"type":["string","null"]}},"required":["action_type","resource","requested_parameters","status","receipt_ref"]}
 FINAL_SCHEMA={"type":"object","additionalProperties":False,"properties":{
-    "outcome":{"enum":OUTCOMES},"evidence":{"type":"array","items":CLAIM_SCHEMA},
+    "outcome":{"type":"string","enum":OUTCOMES},"evidence":{"type":"array","items":CLAIM_SCHEMA},
     "actions":{"type":"array","items":ACTION_SCHEMA},
-    "approval_state":{"enum":["not_required","pending","approved"]},"decision_summary":{"type":"string"}},
+    "approval_state":{"type":"string","enum":["not_required","pending","approved"]},"decision_summary":{"type":"string"}},
     "required":["outcome","evidence","actions","approval_state","decision_summary"]}
 
 def decision_schema(available_tools):
@@ -31,10 +31,11 @@ def decision_schema(available_tools):
         parameters=TOOL_SPECS[name]["parameters"]
         args={"type":"object","additionalProperties":False,"properties":{k:{"type":v} for k,v in parameters.items()},"required":list(parameters)}
         branches.append({"type":"object","additionalProperties":False,"properties":{
-            "kind":{"const":"tool"},"tool":{"const":name},"args":args},"required":["kind","tool","args"]})
+            "kind":{"type":"string","enum":["tool"]},"tool":{"type":"string","enum":[name]},"args":args},"required":["kind","tool","args"]})
     branches.append({"type":"object","additionalProperties":False,"properties":{
-        "kind":{"const":"final"},"result":FINAL_SCHEMA},"required":["kind","result"]})
-    return {"oneOf":branches}
+        "kind":{"type":"string","enum":["final"]},"result":FINAL_SCHEMA},"required":["kind","result"]})
+    return {"type":"object","additionalProperties":False,
+            "properties":{"decision":{"anyOf":branches}},"required":["decision"]}
 
 def _strict_keys(value,keys):
     if not isinstance(value,dict) or set(value)!=set(keys):
@@ -53,6 +54,8 @@ def parse_decision(response,available_tools):
             value=json.loads(json.dumps(response.structured_output,allow_nan=False),object_pairs_hook=_no_duplicates)
         else:
             value=json.loads(response.text,parse_constant=lambda x: (_ for _ in ()).throw(InvalidModelOutput("MODEL_OUTPUT_INVALID")),object_pairs_hook=_no_duplicates)
+        _strict_keys(value,{"decision"})
+        value=value["decision"]
         if not isinstance(value,dict):raise InvalidModelOutput("MODEL_OUTPUT_INVALID")
         if value.get("kind")=="tool":
             _strict_keys(value,{"kind","tool","args"})

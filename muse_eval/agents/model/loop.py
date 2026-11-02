@@ -63,9 +63,11 @@ class ModelAgent:
             before=perf_counter();usage['model_call_count']+=1
             try:
                 response=client.generate(messages,schema,timeout_s=min(config.request_timeout_s,remaining))
-            except (ModelProviderError,TimeoutError,OSError):
+            except (ModelProviderError,TimeoutError,OSError) as exc:
                 usage['model_latency_ms']+=(perf_counter()-before)*1000
                 usage.update(input_tokens=None,output_tokens=None,provider_usage_available=False)
+                if isinstance(exc,ModelProviderError):
+                    usage['provider_error']=exc.safe_diagnostics()
                 return finish(AgentResult("",outcome="error"),"MODEL_PROVIDER_ERROR")
             usage['model_latency_ms']+=(perf_counter()-before)*1000
             for key in ('input_tokens','output_tokens'):
@@ -97,6 +99,6 @@ class ModelAgent:
             usage['tool_call_count']+=1
             # Only structured public tool decisions/observations are retained in memory;
             # no raw model prose or private reasoning is persisted.
-            messages.append({"role":"assistant","content":json.dumps(decision,allow_nan=False)})
+            messages.append({"role":"assistant","content":json.dumps({"decision":decision},allow_nan=False)})
             messages.append({"role":"user","content":json.dumps({"tool_observation":observation_view(asdict(observation))},allow_nan=False)})
         return finish(AgentResult("",outcome="error"),"MODEL_CALL_LIMIT")

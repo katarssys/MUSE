@@ -1,3 +1,27 @@
+# Latest maintenance: Meta strict wire protocol
+
+- Live schema is now a closed root object with required `decision` containing
+  nested `anyOf`. No `oneOf`; every object is closed and fully required.
+- Parser requires exactly that envelope, then preserves existing tool/final
+  semantic checks. Scripted fixtures and conversation history use the same envelope.
+- `strict=true` remains enabled in ChatCompletionsClient for both adapters.
+- Provider diagnostics export HTTP status and allowlisted type/code tags only;
+  unknown provider strings become null. Raw bodies, prompts, Authorization,
+  credentials and private reasoning are not exported. Safe HTTP diagnostics reach
+  adapter model telemetry without changing scoring/evaluator behavior.
+- Verification: `python -m unittest discover -s muse_eval/tests -v`:
+  **92 passed, 0 failed, 0 skipped**; `git diff --check` passed.
+- All 38 frozen P0.2 files remain unchanged. No scenarios, predicates, scoring,
+  trusted renderer or deterministic regression logic changed.
+- No real API calls were made for this fix. Actual Meta endpoint acceptance of
+  the full live schema still requires one local smoke through the real client;
+  no new benchmark/quality claims are made here.
+
+The earlier handoff below is historical; current local Meta availability/smoke
+results were supplied by the user, not reproduced in this credential-free runtime.
+
+---
+
 # META/MUSE ADAPTER HANDOFF
 
 **Status: MODEL_NOT_CONNECTED.** Provider-neutral adapters are implemented and

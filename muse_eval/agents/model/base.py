@@ -8,7 +8,26 @@ class ModelNotConnected(RuntimeError):
     pass
 
 class ModelProviderError(RuntimeError):
-    pass
+    # Provider-controlled strings are never diagnostics unless explicitly known.
+    SAFE_TAGS = frozenset({
+        "invalid_request_error", "authentication_error", "permission_error",
+        "rate_limit_error", "server_error", "api_error", "validation_error",
+        "invalid_api_key", "rate_limit_exceeded", "context_length_exceeded",
+        "model_not_found", "invalid_model", "permission_denied", "insufficient_quota",
+        "invalid_json_schema", "invalid_schema", "unsupported_schema",
+        "unsupported_response_format", "unsupported_parameter", "invalid_parameter",
+        "json_schema_validation_error", "bad_request",
+    })
+
+    def __init__(self, message, *, http_status=None, error_type=None, error_code=None):
+        super().__init__(message)
+        self.http_status = http_status if type(http_status) is int and 100 <= http_status <= 599 else None
+        self.error_type = error_type if isinstance(error_type,str) and error_type in self.SAFE_TAGS else None
+        self.error_code = (error_code if isinstance(error_code,str) and error_code in self.SAFE_TAGS
+                           or type(error_code) is int and 0 <= error_code <= 999999 else None)
+
+    def safe_diagnostics(self):
+        return {"http_status":self.http_status,"error_type":self.error_type,"error_code":self.error_code}
 
 @dataclass(frozen=True)
 class ModelConfig:

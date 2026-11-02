@@ -35,6 +35,7 @@ class ChatCompletionsClient:
         try:
             # Default proxy handling and TLS CA verification stay enabled.
             with request.build_opener(_NoRedirect()).open(req,timeout=timeout_s) as response:
+                http_status=getattr(response,"status",None)
                 raw=response.read(1024*1024+1)
             if len(raw)>1024*1024:
                 raise ModelProviderError("MODEL_PROVIDER_RESPONSE_TOO_LARGE")
@@ -51,9 +52,24 @@ class ChatCompletionsClient:
                 value=usage.get(source) if isinstance(usage,dict) else None
                 counts[target]=value if type(value) is int and value>=0 else None
             return ModelResponse(content,usage=counts,latency_ms=(perf_counter()-started)*1000,
-                                 provider_metadata={"provider":self.config.provider,"model":self.config.model},estimated_cost=None)
+                                 provider_metadata={"provider":self.config.provider,"model":self.config.model,
+                                                    "returned_model":returned_model,"http_status":http_status},estimated_cost=None)
         except ModelProviderError:
             raise
-        except (error.HTTPError,error.URLError,OSError,ValueError,KeyError,IndexError,TypeError):
+        except error.HTTPError as exc:
+            details={}
+            try:
+                raw_error=exc.read(65537)
+                if len(raw_error)<=65536:
+                    body=json.loads(raw_error)
+                    if isinstance(body,dict) and isinstance(body.get("error"),dict):
+                        details=body["error"]
+            except (OSError,ValueError,TypeError):
+                pass
+            # Exception constructor only retains allowlisted tags / bounded numeric
+            # codes. Never retain error.message, raw body, headers or request data.
+            raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",http_status=exc.code,
+                                     error_type=details.get("type"),error_code=details.get("code")) from None
+        except (error.URLError,OSError,ValueError,KeyError,IndexError,TypeError):
             # Do not export provider bodies, headers, raw text or exception messages.
             raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED") from None

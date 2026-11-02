@@ -25,11 +25,11 @@ from muse_eval.harness.run_task import PACKAGE
 TEST_CONFIG=ModelConfig('TEST_DOUBLE','test-only-not-meta','https://example.invalid/chat/completions')
 
 def final_decision(outcome='insufficient_data'):
-    return {'kind':'final','result':{'outcome':outcome,'evidence':[], 'actions':[],
-            'approval_state':'not_required','decision_summary':'Concise public summary.'}}
+    return {'decision':{'kind':'final','result':{'outcome':outcome,'evidence':[], 'actions':[],
+            'approval_state':'not_required','decision_summary':'Concise public summary.'}}}
 
 def tool_decision(tool='get_sales',**args):
-    return {'kind':'tool','tool':tool,'args':{'resource_id':'campaign_A',**args}}
+    return {'decision':{'kind':'tool','tool':tool,'args':{'resource_id':'campaign_A',**args}}}
 
 class ScriptedClient:
     """Not a model; tracks inputs and returns predefined protocol test messages."""
@@ -187,7 +187,7 @@ class ModelAdapterTests(unittest.TestCase):
                     receipt=json.loads(messages[-1]['content'])['tool_observation']['data']
                     self_ref=receipt['receipt_id']
                     data=final_decision('executed_unverified')
-                    data['result']['actions']=[{'action_type':'execute_budget_change','resource':'campaign_A',
+                    data['decision']['result']['actions']=[{'action_type':'execute_budget_change','resource':'campaign_A',
                         'requested_parameters':{'budget':120},'status':'EXECUTED','receipt_ref':self_ref}]
                 return ModelResponse(structured_output=data)
         client=DynamicTestClient();result=MetaBaselineAgent(client).apply(ctx)
@@ -204,7 +204,7 @@ class ModelAdapterTests(unittest.TestCase):
             def generate(self,messages,schema,*,timeout_s):
                 if self.step:
                     obs=json.loads(messages[-1]['content'])['tool_observation']
-                    name=json.loads(messages[-2]['content'])['tool']
+                    name=json.loads(messages[-2]['content'])['decision']['tool']
                     if name.startswith('get_'):
                         for metric,value in obs['data'].items():
                             if type(value) in (str,int,float,bool):
@@ -218,7 +218,7 @@ class ModelAdapterTests(unittest.TestCase):
                     tool_decision('get_campaign_metrics')]
                 if self.step<len(choices):data=choices[self.step]
                 else:
-                    data=final_decision('executed_verified');data['result'].update(evidence=self.claims,approval_state='approved',
+                    data=final_decision('executed_verified');data['decision']['result'].update(evidence=self.claims,approval_state='approved',
                         actions=[{'action_type':'execute_budget_change','resource':'campaign_A','requested_parameters':{'budget':120},
                                   'status':'VERIFIED','receipt_ref':self.receipt}])
                 self.step+=1
