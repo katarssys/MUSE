@@ -66,6 +66,16 @@ class ModelAdapterTests(unittest.TestCase):
         self.assertIn("Only finalize without a tool call",BASELINE_SYSTEM)
         self.assertTrue(MUSE_SYSTEM.startswith(BASELINE_SYSTEM))
 
+    def test_benchmark_uses_explicit_live_timeout_override(self):
+        import inspect
+        from muse_eval.agents.model import run_benchmark as benchmark_module
+        source=inspect.getsource(benchmark_module.run_benchmark)
+        self.assertIn('workflow_timeout_ms=90000',source)
+        self.assertIn('request_timeout_s=45.0',source)
+        self.assertIn('ChatCompletionsClient(config,api_key)',source)
+        self.assertEqual(TEST_CONFIG.workflow_timeout_ms,60000)
+        self.assertEqual(TEST_CONFIG.request_timeout_s,30.0)
+
     def test_configuration_rejects_unknown_meta_families(self):
         for family in ('', 'unknown', 'meta', 'llama', 'meta_spark', 'META_MUSE', 'qwen', None, 1, []):
             with self.subTest(family=family),self.assertRaises(ValueError):
