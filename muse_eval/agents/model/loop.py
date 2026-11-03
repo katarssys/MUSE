@@ -91,7 +91,7 @@ class ModelAgent:
             else:usage['estimated_cost']=None
             if perf_counter()-started>config.workflow_timeout_ms/1000:
                 return finish(AgentResult("",outcome="error"),"MODEL_TIMEOUT")
-            try:decision=parse_decision(response,allowed,allow_final=allow_final)
+            try:decision=parse_decision(response,allowed)
             except InvalidModelOutput:
                 return finish(AgentResult("",outcome="error"),"MODEL_OUTPUT_INVALID")
             rejected=guard.rejection(decision)
