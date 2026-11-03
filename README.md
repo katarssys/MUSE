@@ -131,6 +131,20 @@ remaining limitations. OS sandbox, live APIs and model integration are out of sc
 ## Model adapter stage (separate from frozen P0.2)
 
 Provider-neutral adapters and a five-case neutral-request driver are in
-[agents/model](muse_eval/agents/model/README.md). Current status:
-**MODEL_NOT_CONNECTED**. No real Meta/LLM calls or model benchmark scores.
-Deterministic policies, evaluator, fixtures and original tests remain unchanged.
+[agents/model](muse_eval/agents/model/README.md).
+
+Current connected live benchmark status on `codex/muse-model-adapter-p1`:
+
+- full unit suite: **142/142 PASS**;
+- paired five-case live run: baseline **0/5 PASS**, MUSE **5/5 PASS**;
+- MUSE hard failures: **0**;
+- all five MUSE cases passed run completion, expected outcome, grounding, tool
+  correctness, fabricated-execution safety, approval policy, idempotency, target
+  correctness and required-evidence checks;
+- frozen P0.2 evaluator/scenarios/connectors/schemas/deterministic agents remain
+  byte-checked and unchanged by the model benchmark driver.
+
+The connected run used the same configured provider/model client for baseline and
+MUSE. Provider/model identity is recorded as declared configuration in the generated
+manifest; independent model-family authenticity is still **not** claimed by the
+harness. Generated run artifacts stay under ignored `muse_eval/runs/`.
