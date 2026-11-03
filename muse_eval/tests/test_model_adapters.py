@@ -15,6 +15,7 @@ from muse_eval.agents.model.muse_candidate import MuseModelAgent
 from muse_eval.agents.model.parser import parse_decision, InvalidModelOutput, decision_schema
 from muse_eval.agents.model.provider import ChatCompletionsClient, _NoRedirect
 from muse_eval.agents.model.run_benchmark import run_benchmark, selected_scenarios, frozen_fingerprint
+from muse_eval.agents.model.prompts import BASELINE_SYSTEM, MUSE_SYSTEM
 from muse_eval.schemas.result import TaskContext, validate_result
 from muse_eval.harness.worker import execute_agent
 from muse_eval.harness.telemetry import Telemetry
@@ -58,6 +59,12 @@ class ModelAdapterTests(unittest.TestCase):
         for family in ('meta_llama','meta_muse'):
             with self.subTest(family=family),self.assertRaises(ValueError):
                 replace(TEST_CONFIG,provider='',family=family)
+
+    def test_shared_prompt_requires_relevant_tool_use_before_finalization(self):
+        self.assertIn("use the relevant tool before finalizing",BASELINE_SYSTEM)
+        self.assertIn("proposal/authorization tool is available",BASELINE_SYSTEM)
+        self.assertIn("Only finalize without a tool call",BASELINE_SYSTEM)
+        self.assertTrue(MUSE_SYSTEM.startswith(BASELINE_SYSTEM))
 
     def test_configuration_rejects_unknown_meta_families(self):
         for family in ('', 'unknown', 'meta', 'llama', 'meta_spark', 'META_MUSE', 'qwen', None, 1, []):
