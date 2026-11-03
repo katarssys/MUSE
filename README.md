@@ -189,6 +189,39 @@ Not implemented:
 The Mechanical proof uses synthetic observations only and must not be interpreted
 as authorization to control real equipment.
 
+## Demo UI
+
+A static hackathon demo is available under `demo/`. It visualizes the same MUSE
+verification concepts used by the tested domain proofs:
+
+- Marketing
+- E-commerce
+- DevOps
+- Mechanical Engineering
+
+The demo shows the shared flow:
+
+```text
+Evidence → Consistency → Policy → Action → Receipt → Readback → Verdict
+```
+
+Run it locally from the repository root:
+
+```powershell
+& "C:\Users\katya\AppData\Local\Python\bin\python.exe" -m http.server 8080 -d demo
+```
+
+Then open:
+
+```text
+http://localhost:8080
+```
+
+The UI is intentionally static and dependency-free (`HTML + CSS + JS`) so it can
+be used reliably for the hackathon demo/video without adding a new frontend build
+pipeline. It does not replace the benchmark or synthetic workflow engine; it presents
+the verified behaviors in a judge-friendly interface.
+
 ## Quick validation
 
 Python 3.10+.
