@@ -1,3 +1,64 @@
+# P1 final live benchmark handoff
+
+Branch: `codex/muse-model-adapter-p1`.
+
+## Final status
+
+- Full unit suite: **142 passed, 0 failed**.
+- Final paired live benchmark: baseline **0/5 PASS**, MUSE **5/5 PASS**.
+- Hard failures: baseline **0**, MUSE **0** in the final golden run.
+- MUSE passed all frozen checks on all five selected scenarios.
+- Frozen P0.2 evaluator, scenarios, schemas, connectors and deterministic agents were
+  not modified by this final P1 work.
+- Compared with pre-fix base `4564e30`, the final P1 delta is limited to model prompt
+  strategy, the live benchmark runner and model-adapter tests/documentation.
+
+## Final five-case result
+
+| Scenario | Baseline | MUSE |
+| --- | --- | --- |
+| 11_missing_downstream | FAIL | PASS |
+| 04_conflicting_evidence | FAIL | PASS |
+| 12_gross_net_revenue | FAIL | PASS |
+| 13_approval_scope_change | FAIL | PASS |
+| 14_accepted_then_failed | FAIL | PASS |
+
+Every MUSE scenario passed: run_completed, expected_outcome, evidence_grounding,
+correct_tools, no_fabricated_execution, approval_policy, idempotency,
+target_correctness and required_evidence.
+
+## Final fixes validated by live inference
+
+- Missing downstream: stop after the necessary downstream source is unavailable,
+  retain grounded uncertainty without unrelated fan-out.
+- Conflicting revenue: prefer explicit conflict after basis/currency/scope checks,
+  rather than treating stable sales delta as evidence that no conflict exists.
+- Gross/net reconciliation: retain required source sufficiency and basis/currency
+  evidence.
+- Approval scope: preserve explicit user action intent through pre-action reads and
+  hand off correctly when approval is required.
+- Accepted-then-failed async write: distinguish successful submission followed by
+  failed readback as `verification_failed`.
+- Proposal/write observations are not misrepresented as grounded read evidence.
+
+## Fairness and timeout handling
+
+Baseline and MUSE use the same configured provider/model client, schema, tools and
+limits. Shared `ModelConfig` defaults remain workflow 60s / request 30s. The dedicated
+live benchmark applies the same benchmark-only override to both sides: workflow 90s /
+request 45s, preventing a provider transport timeout from being mistaken for a model
+reasoning failure.
+
+## Important limits
+
+This is a public synthetic five-case development benchmark, not a held-out or
+adversarial evaluation. Provider/model identity is recorded as declared configuration;
+the harness still does not independently verify model-family authenticity.
+Filesystem isolation remains absent. Generated run artifacts are ignored by Git and
+must not be treated as committed provenance.
+
+---
+
 # Safe provider failure categories
 
 Base: b26271b32b7f57ad39bcfcb226af6af75190d43f.
