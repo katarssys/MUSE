@@ -19,15 +19,22 @@ class ModelProviderError(RuntimeError):
         "json_schema_validation_error", "bad_request",
     })
 
-    def __init__(self, message, *, http_status=None, error_type=None, error_code=None):
+    SAFE_CATEGORIES = frozenset({
+        "timeout", "url_error", "connection_error", "response_json_invalid",
+        "response_shape_invalid", "http_error", "framing_invalid",
+        "model_mismatch", "response_too_large", "redirect_rejected",
+    })
+
+    def __init__(self, message, *, http_status=None, error_type=None, error_code=None, category=None):
         super().__init__(message)
+        self.category = category if isinstance(category,str) and category in self.SAFE_CATEGORIES else None
         self.http_status = http_status if type(http_status) is int and 100 <= http_status <= 599 else None
         self.error_type = error_type if isinstance(error_type,str) and error_type in self.SAFE_TAGS else None
         self.error_code = (error_code if isinstance(error_code,str) and error_code in self.SAFE_TAGS
                            or type(error_code) is int and 0 <= error_code <= 999999 else None)
 
     def safe_diagnostics(self):
-        return {"http_status":self.http_status,"error_type":self.error_type,"error_code":self.error_code}
+        return {"category":self.category,"http_status":self.http_status,"error_type":self.error_type,"error_code":self.error_code}
 
 @dataclass(frozen=True)
 class ModelConfig:

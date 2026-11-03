@@ -38,7 +38,7 @@ def _meta_json_object(content):
 class _NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         # Never forward an authorization header to another destination.
-        raise ModelProviderError("MODEL_PROVIDER_REDIRECT_REJECTED")
+        raise ModelProviderError("MODEL_PROVIDER_REDIRECT_REJECTED",category="redirect_rejected")
 
 class ChatCompletionsClient:
     def __init__(self, config, api_key):
@@ -64,21 +64,24 @@ class ChatCompletionsClient:
                 http_status=getattr(response,"status",None)
                 raw=response.read(1024*1024+1)
             if len(raw)>1024*1024:
-                raise ModelProviderError("MODEL_PROVIDER_RESPONSE_TOO_LARGE")
-            data=json.loads(raw,parse_constant=lambda x: (_ for _ in ()).throw(ValueError(x)))
+                raise ModelProviderError("MODEL_PROVIDER_RESPONSE_TOO_LARGE",category="response_too_large")
+            try:
+                data=json.loads(raw,parse_constant=lambda x: (_ for _ in ()).throw(ValueError(x)))
+            except (ValueError,TypeError):
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_json_invalid") from None
             content=data["choices"][0]["message"]["content"]
             if not isinstance(content,str):
                 raise ValueError("No text response")
             returned_model=data.get("model")
             if returned_model is not None and returned_model!=self.config.model:
-                raise ModelProviderError("MODEL_PROVIDER_MODEL_MISMATCH")
+                raise ModelProviderError("MODEL_PROVIDER_MODEL_MISMATCH",category="model_mismatch")
             endpoint=urlsplit(self.config.endpoint)
             if (endpoint.hostname=="api.meta.ai" and endpoint.port in (None,443)
                     and endpoint.path.rstrip('/')=="/v1/chat/completions"):
                 try:
                     content=_meta_json_object(content)
                 except (ValueError,RecursionError):
-                    raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",http_status=http_status) from None
+                    raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",http_status=http_status,category="framing_invalid") from None
             usage=data.get("usage")
             counts={}
             for target,source in (("input_tokens","prompt_tokens"),("output_tokens","completion_tokens")):
@@ -102,7 +105,15 @@ class ChatCompletionsClient:
             # Exception constructor only retains allowlisted tags / bounded numeric
             # codes. Never retain error.message, raw body, headers or request data.
             raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",http_status=exc.code,
-                                     error_type=details.get("type"),error_code=details.get("code")) from None
-        except (error.URLError,OSError,ValueError,KeyError,IndexError,TypeError):
+                                     error_type=details.get("type"),error_code=details.get("code"),category="http_error") from None
+        except TimeoutError:
+            raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="timeout") from None
+        except error.URLError as exc:
+            # Inspect types only: reason/message text may contain URLs or secrets.
+            category="timeout" if isinstance(exc.reason,TimeoutError) else "url_error"
+            raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category=category) from None
+        except OSError:
+            raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="connection_error") from None
+        except (ValueError,KeyError,IndexError,TypeError):
             # Do not export provider bodies, headers, raw text or exception messages.
-            raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED") from None
+            raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid") from None

@@ -102,7 +102,7 @@ class MetaStrictProtocolTests(unittest.TestCase):
             with self.assertRaises(ModelProviderError) as captured:
                 ChatCompletionsClient(CONFIG,'UNIT_TEST_ONLY').generate([],{},timeout_s=1)
         error=captured.exception
-        self.assertEqual(error.safe_diagnostics(),{'http_status':400,'error_type':'invalid_request_error','error_code':'invalid_json_schema'})
+        self.assertEqual(error.safe_diagnostics(),{'category':'http_error','http_status':400,'error_type':'invalid_request_error','error_code':'invalid_json_schema'})
         exported=json.dumps(error.safe_diagnostics())+str(error)
         for canary in ('SECRET_CANARY','PROMPT_CANARY','PRIVATE_REASONING','UNIT_TEST_ONLY','Authorization','DO_NOT_EXPORT'):
             self.assertNotIn(canary,exported)
@@ -116,7 +116,7 @@ class MetaStrictProtocolTests(unittest.TestCase):
                 with patch('muse_eval.agents.model.provider.request.build_opener',return_value=opener):
                     with self.assertRaises(ModelProviderError) as captured:
                         ChatCompletionsClient(CONFIG,'UNIT_TEST_ONLY').generate([],{},timeout_s=1)
-                self.assertEqual(captured.exception.safe_diagnostics(),{'http_status':401,'error_type':None,'error_code':None})
+                self.assertEqual(captured.exception.safe_diagnostics(),{'category':'http_error','http_status':401,'error_type':None,'error_code':None})
 
     def test_safe_http_diagnostics_reach_both_adapter_results(self):
         class NoTools:
@@ -241,7 +241,7 @@ class MetaStrictProtocolTests(unittest.TestCase):
             with self.assertRaises(ModelProviderError) as captured:
                 ChatCompletionsClient(CONFIG,'UNIT_TEST_ONLY').generate([],{},timeout_s=1)
         error=captured.exception
-        self.assertEqual(error.safe_diagnostics(),{'http_status':400,'error_type':'invalid_request_error','error_code':'invalid_json_schema'})
+        self.assertEqual(error.safe_diagnostics(),{'category':'http_error','http_status':400,'error_type':'invalid_request_error','error_code':'invalid_json_schema'})
         exported=json.dumps(error.safe_diagnostics())+str(error)
         for canary in ('SECRET_CANARY','PROMPT_CANARY','PRIVATE_REASONING','UNIT_TEST_ONLY','Authorization','DO_NOT_EXPORT'):
             self.assertNotIn(canary,exported)
@@ -255,7 +255,7 @@ class MetaStrictProtocolTests(unittest.TestCase):
                 with patch('muse_eval.agents.model.provider.request.build_opener',return_value=opener):
                     with self.assertRaises(ModelProviderError) as captured:
                         ChatCompletionsClient(CONFIG,'UNIT_TEST_ONLY').generate([],{},timeout_s=1)
-                self.assertEqual(captured.exception.safe_diagnostics(),{'http_status':401,'error_type':None,'error_code':None})
+                self.assertEqual(captured.exception.safe_diagnostics(),{'category':'http_error','http_status':401,'error_type':None,'error_code':None})
 
     def test_safe_http_diagnostics_reach_both_adapter_results(self):
         class NoTools:

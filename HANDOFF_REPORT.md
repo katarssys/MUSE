@@ -1,3 +1,48 @@
+# Safe provider failure categories
+
+Base: b26271b32b7f57ad39bcfcb226af6af75190d43f.
+Root cause: transport and response decoding/shape failures were collapsed into
+MODEL_PROVIDER_REQUEST_FAILED with null HTTP tags, leaving their failure stage unknown.
+This does not establish that the reported live failures were timeouts; the next
+local run can now distinguish the failure category.
+
+Implementation: finite allowlisted category in ModelProviderError.safe_diagnostics(),
+exported through existing result.metadata.model_telemetry.provider_error. Categories:
+timeout, url_error, connection_error, response_json_invalid, response_shape_invalid,
+http_error, framing_invalid, model_mismatch, response_too_large, redirect_rejected.
+Direct TimeoutError/socket.timeout and URLError.reason containing a TimeoutError
+are recognized by type only; no classification from exception messages. Sanitized
+HTTP status/type/code rules remain intact. No raw text, body, headers, URL, credentials,
+private reasoning, exception messages or stack traces are exported.
+
+Exact changed files:
+- muse_eval/agents/model/base.py
+- muse_eval/agents/model/provider.py
+- muse_eval/tests/test_provider_diagnostics.py
+- muse_eval/tests/test_meta_strict_protocol.py (diagnostic dictionary assertions only)
+- muse_eval/tests/test_meta_framing.py (diagnostic dictionary assertion only)
+- HANDOFF_REPORT.md
+
+Validation actually run:
+- python -m unittest discover -s muse_eval/tests -p test_provider_diagnostics.py -v:
+  10 passed, 0 failed (0.004s).
+- python -m unittest discover -s muse_eval/tests -v:
+  140 passed, 0 failed, 0 skipped (4.636s); Linux equivalent of Windows py command.
+- git diff --check: PASS.
+- 38 frozen P0.2 files are raw-byte-identical to da2ff0b.
+- Parser/schema, prompts, orchestration, loop and benchmark driver are byte-identical
+  to b26271b; framing normalization function and ModelConfig definitions are unchanged.
+- request_timeout_s remains 15.0; model/tool limits remain 8. No retries were added.
+- Tests cover direct and wrapped timeout, read timeout, URL/connection failures,
+  HTTP sanitization, invalid JSON/encoding/shape, finite categories, no sensitive text
+  leakage and adapter result export for both agents. Existing framing tests pass.
+No real API calls were made. No benchmark semantics, endpoint or model changes.
+Publication is authorized as a normal non-force push; result reported separately.
+
+Earlier reports below are historical.
+
+---
+
 # P1.2: narrow safety enforcement and bound feedback without progress
 
 Base: e4b01467b115cdb7866cfde43b8b181de613bb51 on codex/muse-model-adapter-p1.
