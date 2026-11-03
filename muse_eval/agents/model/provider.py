@@ -61,7 +61,7 @@ class ChatCompletionsClient:
 
     def generate(self, messages, schema, *, timeout_s):
         payload = {"model":self.config.model,"messages":messages,"temperature":self.config.temperature,
-                   "max_tokens":self.config.max_output_tokens,
+                   "max_completion_tokens":self.config.max_output_tokens,
                    "response_format":{"type":"json_schema","json_schema":{"name":"agent_decision","strict":True,"schema":schema}}}
         req=request.Request(self.config.endpoint,data=json.dumps(payload,allow_nan=False).encode(),
                             headers={"Content-Type":"application/json","Authorization":"Bearer "+self._api_key},method="POST")
