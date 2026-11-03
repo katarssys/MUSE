@@ -40,7 +40,7 @@ def _meta_json_object(content):
     if not isinstance(value,dict):
         raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_root_not_object")
     if text[end:].strip(" \t\r\n"):
-        raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_trailing_content")
+        raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_trailing_content") from None
     return text[start:end]
 
 class _NoRedirect(request.HTTPRedirectHandler):
@@ -78,23 +78,23 @@ class ChatCompletionsClient:
             except (ValueError,TypeError):
                 raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_json_invalid") from None
             if not isinstance(data,dict):
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_root_not_object")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_root_not_object") from None
             choices=data.get("choices")
             if not isinstance(choices,list):
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choices_missing")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choices_missing") from None
             if not choices:
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choices_empty")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choices_empty") from None
             choice=choices[0]
             if not isinstance(choice,dict):
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choice_not_object")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choice_not_object") from None
             message=choice.get("message")
             if not isinstance(message,dict):
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_message_missing")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_message_missing") from None
             if "content" not in message:
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_missing")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_missing") from None
             content=message["content"]
             if not isinstance(content,str):
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_not_string")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_not_string") from None
             returned_model=data.get("model")
             if returned_model is not None and returned_model!=self.config.model:
                 raise ModelProviderError("MODEL_PROVIDER_MODEL_MISMATCH",category="model_mismatch")
