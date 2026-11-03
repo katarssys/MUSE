@@ -95,7 +95,13 @@ class ChatCompletionsClient:
             content=message["content"]
             if not isinstance(content,str):
                 if content is None:
-                    code="shape_content_null"
+                    finish_reason=choice.get("finish_reason")
+                    code={
+                        "length":"shape_content_null_length",
+                        "tool_calls":"shape_content_null_tool_calls",
+                        "content_filter":"shape_content_null_content_filter",
+                        "stop":"shape_content_null_stop",
+                    }.get(finish_reason,"shape_content_null_other")
                 elif isinstance(content,list):
                     code="shape_content_array"
                 elif isinstance(content,dict):
