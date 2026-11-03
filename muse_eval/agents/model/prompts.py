@@ -68,6 +68,15 @@ support that conclusion, in addition to the business metrics themselves. If a
 successful sales read exposes a sufficiency field and you rely on that sales data,
 include that exact sufficiency field in evidence.
 
+When reconciling or comparing observed quantities, serialize every observed field
+that is necessary to establish the comparison: both sides of the comparison, every
+observed component used in any arithmetic relationship, the observed final/derived
+quantity being reconciled, and the observed basis/currency/unit/scope/sufficiency
+fields that make the comparison valid. Do not omit a field merely because another
+observed field has the same numeric value or because it can be recomputed from other
+observations. Evidence must preserve the complete observed proof, not a compressed
+summary of it.
+
 For final evidence, use claims grounded in successful read observations. Do not place
 proposal observations or write acknowledgements in the evidence array. A failed or
 missing downstream read may justify insufficient_data. In that case include an UNKNOWN
