@@ -51,7 +51,7 @@ def _no_duplicates(pairs):
         obj[k]=v
     return obj
 
-def parse_decision(response,available_tools, *, allow_final=True):
+def parse_decision(response,available_tools):
     try:
         if response.structured_output is not None:
             value=json.loads(json.dumps(response.structured_output,allow_nan=False),object_pairs_hook=_no_duplicates)
@@ -71,7 +71,7 @@ def parse_decision(response,available_tools, *, allow_final=True):
                 if t=="number" and (type(args[k]) not in (int,float) or args[k]<=0):raise InvalidModelOutput("MODEL_OUTPUT_INVALID")
             return deepcopy(value)
         _strict_keys(value,{"kind","result"})
-        if value["kind"]!="final" or not allow_final:raise InvalidModelOutput("MODEL_OUTPUT_INVALID")
+        if value["kind"]!="final":raise InvalidModelOutput("MODEL_OUTPUT_INVALID")
         data=value["result"]
         _strict_keys(data,{"outcome","evidence","actions","approval_state","decision_summary"})
         if data['outcome'] not in OUTCOMES or data['approval_state'] not in {'not_required','pending','approved'}:
