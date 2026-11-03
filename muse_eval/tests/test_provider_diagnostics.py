@@ -73,10 +73,22 @@ class ProviderDiagnosticsTests(unittest.TestCase):
             self.assertEqual(self.capture(body=body)['category'],'response_json_invalid')
 
     def test_response_shape_failures(self):
-        for value in ({},[],None,{'choices':[]},{'choices':None},
-                      {'choices':[{}]},{'choices':[{'message':{'content':None}}]}):
+        cases=[
+            ([], 'shape_root_not_object'),
+            (None, 'shape_root_not_object'),
+            ({}, 'shape_choices_missing'),
+            ({'choices':None}, 'shape_choices_missing'),
+            ({'choices':[]}, 'shape_choices_empty'),
+            ({'choices':[None]}, 'shape_choice_not_object'),
+            ({'choices':[{}]}, 'shape_message_missing'),
+            ({'choices':[{'message':{}}]}, 'shape_content_missing'),
+            ({'choices':[{'message':{'content':None}}]}, 'shape_content_not_string'),
+        ]
+        for value,code in cases:
             with self.subTest(value=value):
-                self.assertEqual(self.capture(body=json.dumps(value).encode())['category'],'response_shape_invalid')
+                diagnostic=self.capture(body=json.dumps(value).encode())
+                self.assertEqual(diagnostic['category'],'response_shape_invalid')
+                self.assertEqual(diagnostic['error_code'],code)
 
     def test_category_is_allowlisted_not_free_text(self):
         self.assertIsNone(ModelProviderError('FIXED',category=SECRET).safe_diagnostics()['category'])
