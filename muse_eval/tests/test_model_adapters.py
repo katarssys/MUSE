@@ -279,6 +279,8 @@ class ModelAdapterTests(unittest.TestCase):
         req=opener.open.call_args.args[0]
         self.assertEqual(req.full_url,TEST_CONFIG.endpoint)
         self.assertEqual(json.loads(req.data)['model'],TEST_CONFIG.model)
+        self.assertEqual(json.loads(req.data)['max_completion_tokens'],TEST_CONFIG.max_output_tokens)
+        self.assertNotIn('max_tokens',json.loads(req.data))
         self.assertEqual(opener.open.call_args.kwargs['timeout'],2)
         self.assertIsNone(response.estimated_cost)
 
