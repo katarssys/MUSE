@@ -1,3 +1,54 @@
+# Marketing and E-commerce synthetic domain proof
+
+Branch: codex/muse-domains-marketing-ecommerce. Accepted Agent B source commit
+f0cfe9cfc433b10680e9445ab8aecca6ee1e5a1d was cherry-picked first, without conflict,
+as 75577a52e1d3a7998e7400c52df0fd3b972bb201. Baseline suite: 156 passed.
+
+Extended the SAME DomainContract/SyntheticWorkflow with optional typed evidence
+fields, explicit expected labels, dimension compatibility and declared weighted
+numeric equalities. Empty defaults preserve existing contracts. Added read-only
+assessment shared by submission; no domain/metric dispatch or evaluator imports.
+Marketing declares gross/net reconciliation, budget scope and terminal state.
+E-commerce declares effective availability, supplier readiness and fulfillment.
+No live integrations, real side effects or model calls were made.
+
+Exact implementation/documentation files changed after Agent B cherry-pick:
+- muse_eval/domains/contract.py
+- muse_eval/domains/marketing.py
+- muse_eval/domains/ecommerce.py
+- muse_eval/domains/README.md
+- muse_eval/tests/test_marketing_ecommerce.py
+- HANDOFF_REPORT.md
+
+Validation actually run:
+- python -m unittest discover -s muse_eval/tests -p test_marketing_ecommerce.py -v:
+  20 passed, 0 failed, 0 skipped.
+- python -m unittest discover -s muse_eval/tests -v:
+  final 176 passed, 0 failed, 0 skipped (4.772 seconds).
+- git diff --check: PASS.
+- All original test files, including test_domains.py, and all P1 model-core files
+  are byte-identical to the post-cherry-pick state. All prior 156 tests still pass.
+- All 38 frozen files compared as raw bytes to da2ff0b: identical. Original Agent B
+  frozen/P1 integrity guard passes unchanged.
+
+Tests cover MK1-MK3 and EC1-EC3, missing/stale/conflicting sources, exact approval
+and readback correlation, no duplicate side effects, strict numeric types,
+currency/unit/period/scope compatibility, gross/net non-equivalence and explicit
+reconciliation, and one engine for five domains with opaque contract names.
+
+No limitation forced domain-specific logic into the engine. Relationships are
+intentionally limited to declared linear equalities, with explicit absolute
+numeric tolerance; no implicit FX, production decimal accounting, causal inference,
+authentication or freshness inference. Sufficiency and readback inputs remain
+trusted synthetic data. Ledger remains sequential/in-memory; no durable/concurrent
+or physical-safety guarantees are claimed. README separates implemented proofs
+from unavailable production integrations.
+Normal push is authorized only to the working branch; no main merge.
+
+Earlier reports below are historical.
+
+---
+
 # P1 final live benchmark handoff
 
 Branch: `codex/muse-model-adapter-p1`.
