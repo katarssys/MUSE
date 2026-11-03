@@ -24,15 +24,23 @@ def _meta_json_object(content):
         value,end=decoder.raw_decode(text)
         start=0
     except json.JSONDecodeError:
-        # Arrays/quoted scalars (including malformed ones) are not prose wrappers.
-        if not text or text[0] in '["':
-            raise ValueError("Invalid structured-output framing") from None
+        if not text:
+            raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_no_object") from None
+        if text[0] in '["':
+            raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_root_not_object") from None
         start=text.find('{')
         if start<=0:
-            raise ValueError("Invalid structured-output framing") from None
-        value,end=decoder.raw_decode(text,start)
-    if not isinstance(value,dict) or text[end:].strip(" \t\r\n"):
-        raise ValueError("Invalid structured-output framing")
+            raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_no_object") from None
+        try:
+            value,end=decoder.raw_decode(text,start)
+        except (json.JSONDecodeError,ValueError):
+            raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_invalid_json") from None
+    except ValueError:
+        raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_invalid_json") from None
+    if not isinstance(value,dict):
+        raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_root_not_object")
+    if text[end:].strip(" \t\r\n"):
+        raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",category="framing_invalid",error_code="framing_trailing_content")
     return text[start:end]
 
 class _NoRedirect(request.HTTPRedirectHandler):
@@ -69,9 +77,24 @@ class ChatCompletionsClient:
                 data=json.loads(raw,parse_constant=lambda x: (_ for _ in ()).throw(ValueError(x)))
             except (ValueError,TypeError):
                 raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_json_invalid") from None
-            content=data["choices"][0]["message"]["content"]
+            if not isinstance(data,dict):
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_root_not_object")
+            choices=data.get("choices")
+            if not isinstance(choices,list):
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choices_missing")
+            if not choices:
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choices_empty")
+            choice=choices[0]
+            if not isinstance(choice,dict):
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_choice_not_object")
+            message=choice.get("message")
+            if not isinstance(message,dict):
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_message_missing")
+            if "content" not in message:
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_missing")
+            content=message["content"]
             if not isinstance(content,str):
-                raise ValueError("No text response")
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_not_string")
             returned_model=data.get("model")
             if returned_model is not None and returned_model!=self.config.model:
                 raise ModelProviderError("MODEL_PROVIDER_MODEL_MISMATCH",category="model_mismatch")
@@ -80,8 +103,12 @@ class ChatCompletionsClient:
                     and endpoint.path.rstrip('/')=="/v1/chat/completions"):
                 try:
                     content=_meta_json_object(content)
+                except ModelProviderError as exc:
+                    raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",http_status=http_status,
+                                             category="framing_invalid",error_code=exc.error_code) from None
                 except (ValueError,RecursionError):
-                    raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",http_status=http_status,category="framing_invalid") from None
+                    raise ModelProviderError("MODEL_PROVIDER_FRAMING_INVALID",http_status=http_status,
+                                             category="framing_invalid",error_code="framing_invalid_json") from None
             usage=data.get("usage")
             counts={}
             for target,source in (("input_tokens","prompt_tokens"),("output_tokens","completion_tokens")):
