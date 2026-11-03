@@ -80,7 +80,7 @@ class ProviderDiagnosticsTests(unittest.TestCase):
 
     def test_category_is_allowlisted_not_free_text(self):
         self.assertIsNone(ModelProviderError('FIXED',category=SECRET).safe_diagnostics()['category'])
-        self.assertEqual(CONFIG.request_timeout_s,15.0)
+        self.assertEqual(CONFIG.request_timeout_s,30.0)
         self.assertEqual(CONFIG.max_model_calls,8)
         self.assertEqual(CONFIG.max_tool_calls,8)
 
