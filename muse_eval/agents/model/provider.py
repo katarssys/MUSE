@@ -94,7 +94,15 @@ class ChatCompletionsClient:
                 raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_missing") from None
             content=message["content"]
             if not isinstance(content,str):
-                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code="shape_content_not_string") from None
+                if content is None:
+                    code="shape_content_null"
+                elif isinstance(content,list):
+                    code="shape_content_array"
+                elif isinstance(content,dict):
+                    code="shape_content_object"
+                else:
+                    code="shape_content_other"
+                raise ModelProviderError("MODEL_PROVIDER_REQUEST_FAILED",category="response_shape_invalid",error_code=code) from None
             returned_model=data.get("model")
             if returned_model is not None and returned_model!=self.config.model:
                 raise ModelProviderError("MODEL_PROVIDER_MODEL_MISMATCH",category="model_mismatch")
