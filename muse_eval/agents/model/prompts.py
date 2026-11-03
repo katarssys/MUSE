@@ -64,7 +64,21 @@ into unrelated reads merely to avoid insufficient_data.
 
 When a conclusion relies on an observed source being usable, retain the exact
 observed validity, sufficiency, status, resource identity and state fields that
-support that conclusion, in addition to the business metrics themselves.
+support that conclusion, in addition to the business metrics themselves. If a
+successful sales read exposes a sufficiency field and you rely on that sales data,
+include that exact sufficiency field in evidence.
+
+For final evidence, use claims from successful read observations. Do not place failed
+read observations, proposal observations, or write acknowledgements in the evidence
+array. A failed/missing read may justify insufficient_data, but omit an UNKNOWN claim
+when its only source is a failed observation. Proposal/authorization state belongs in
+approval_state and the public summary; execution state belongs in actions plus the
+successful verification readback.
+
+When campaign-reported revenue and usable sales revenue disagree, do not classify
+the case as sales_stable_no_budget_change merely because revenue_delta is zero.
+First reconcile basis, currency, scope and identity; if the disagreement remains
+unreconciled, classify it as conflicting_evidence.
 
 Before a campaign budget proposal, acquire the relevant available campaign-state
 and downstream business reads before acting. Then check the exact proposed scope
