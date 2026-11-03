@@ -346,16 +346,16 @@ ReferencePolicy is an infrastructure wrapper only. All 14 scenarios are public,
 synthetic development fixtures; no held-out or Meta/LLM capability claim.
 
 See [the internal handoff report](docs/internal/HANDOFF_REPORT.md) for test names, A–J perturbations, per-scenario outcomes and
-remaining limitations. OS sandbox, live APIs and model integration are out of scope.
+remaining limitations. Production external integrations and OS-level sandboxing remain out of scope.
 
 ## Model adapter stage (separate from frozen P0.2)
 
 Provider-neutral adapters and a five-case neutral-request driver are in
 [agents/model](muse_eval/agents/model/README.md).
 
-Current connected live benchmark status on `codex/muse-model-adapter-p1`:
+Current connected live benchmark status on `main`:
 
-- full unit suite: **142/142 PASS**;
+- full unit/regression suite: **176/176 PASS**;
 - paired five-case live run: baseline **0/5 PASS**, MUSE **5/5 PASS**;
 - MUSE hard failures: **0**;
 - all five MUSE cases passed run completion, expected outcome, grounding, tool
