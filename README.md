@@ -345,8 +345,8 @@ budgets/evaluator, and neither branches on expected labels or scenario IDs.
 ReferencePolicy is an infrastructure wrapper only. All 14 scenarios are public,
 synthetic development fixtures; no held-out or Meta/LLM capability claim.
 
-See [the internal handoff report](docs/internal/HANDOFF_REPORT.md) for test names, A–J perturbations, per-scenario outcomes and
-remaining limitations. Production external integrations and OS-level sandboxing remain out of scope.
+Detailed evaluator and benchmark mechanics are documented under [docs/](docs/).
+Production external integrations and OS-level sandboxing remain out of scope.
 
 ## Model adapter stage (separate from frozen P0.2)
 
