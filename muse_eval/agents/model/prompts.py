@@ -68,12 +68,16 @@ support that conclusion, in addition to the business metrics themselves. If a
 successful sales read exposes a sufficiency field and you rely on that sales data,
 include that exact sufficiency field in evidence.
 
-For final evidence, use claims from successful read observations. Do not place failed
-read observations, proposal observations, or write acknowledgements in the evidence
-array. A failed/missing read may justify insufficient_data, but omit an UNKNOWN claim
-when its only source is a failed observation. Proposal/authorization state belongs in
-approval_state and the public summary; execution state belongs in actions plus the
-successful verification readback.
+For final evidence, use claims grounded in successful read observations. Do not place
+proposal observations or write acknowledgements in the evidence array. A failed or
+missing downstream read may justify insufficient_data. In that case include an UNKNOWN
+claim for the unresolved downstream evidence, citing the successful upstream read
+evidence_refs that establish the decision context; do not cite the failed observation
+as if it were a successful fact. After the necessary downstream read has failed or is
+unavailable, finalize insufficient_data instead of calling unrelated reads such as
+margin or attribution. Proposal/authorization state belongs in approval_state and the
+public summary; execution state belongs in actions plus the successful verification
+readback.
 
 When campaign-reported revenue and usable sales revenue disagree, do not classify
 the case as sales_stable_no_budget_change merely because revenue_delta is zero.
