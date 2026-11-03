@@ -3,7 +3,7 @@ name: Deploy MUSE Demo to GitHub Pages
 on:
   push:
     branches:
-      - codex/muse-model-adapter-p1
+      - main
     paths:
       - "demo/**"
       - ".github/workflows/pages.yml"
