@@ -54,8 +54,8 @@ class ModelConfig:
     max_model_calls: int = 8
     max_tool_calls: int = 8
     max_context_chars: int = 24000
-    workflow_timeout_ms: int = 90000
-    request_timeout_s: float = 45.0
+    workflow_timeout_ms: int = 60000
+    request_timeout_s: float = 30.0
 
     def __post_init__(self):
         url = urlsplit(self.endpoint)
