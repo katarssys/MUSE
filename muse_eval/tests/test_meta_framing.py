@@ -127,7 +127,7 @@ class MetaFramingTests(unittest.TestCase):
         with self.assertRaises(ModelProviderError) as caught:
             self.generate('PRIVATE_REASONING_CANARY '+json.dumps(FINAL)+' trailing prose')
         self.assertNotIn('PRIVATE_REASONING_CANARY',str(caught.exception))
-        self.assertEqual(caught.exception.safe_diagnostics(),{'category':'framing_invalid','http_status':200,'error_type':None,'error_code':None})
+        self.assertEqual(caught.exception.safe_diagnostics(),{'category':'framing_invalid','http_status':200,'error_type':None,'error_code':'framing_trailing_content'})
 
     def test_normalizer_is_explicitly_bounded(self):
         with self.assertRaises(ValueError):_meta_json_object('x'*(1024*1024)+json.dumps(FINAL))
