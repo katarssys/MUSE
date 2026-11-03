@@ -17,6 +17,10 @@ class ModelProviderError(RuntimeError):
         "invalid_json_schema", "invalid_schema", "unsupported_schema",
         "unsupported_response_format", "unsupported_parameter", "invalid_parameter",
         "json_schema_validation_error", "bad_request",
+        "framing_invalid_json", "framing_no_object", "framing_root_not_object",
+        "framing_trailing_content", "shape_root_not_object", "shape_choices_missing",
+        "shape_choices_empty", "shape_choice_not_object", "shape_message_missing",
+        "shape_content_missing", "shape_content_not_string",
     })
 
     SAFE_CATEGORIES = frozenset({
