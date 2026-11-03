@@ -1,15 +1,17 @@
 """Five-case model benchmark using frozen P0.2 checks, broker and worker unchanged."""
 import argparse
 from copy import deepcopy
-from dataclasses import asdict
+from dataclasses import asdict, replace
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
 from uuid import uuid4
 from time import perf_counter
 from .base import ModelConfig, ModelNotConnected
+from .provider import ChatCompletionsClient
 from .meta_baseline import MetaBaselineAgent
 from .muse_candidate import MuseModelAgent
 from .prompts import BASELINE_SYSTEM, MUSE_SYSTEM
@@ -83,7 +85,8 @@ def run_benchmark(output_root=None):
               "status":"MODEL_NOT_CONNECTED","actually_connected":False,
               "model_family_verified":False,"model":None,"provider":None,
               "isolation_assurance":"TRUSTED_INTERNAL_ONLY_NO_FILESYSTEM_SANDBOX"}
-    try:config=ModelConfig.from_environment()
+    try:
+        config=replace(ModelConfig.from_environment(),workflow_timeout_ms=90000,request_timeout_s=45.0)
     except ModelNotConnected:
         manifest["reason"]="No configured provider/model endpoint and credential. No model requests or synthetic benchmark substitutes were made."
         write("manifest",manifest)
@@ -96,7 +99,12 @@ def run_benchmark(output_root=None):
     manifest.update(status="CONFIGURED_UNVERIFIED",model=config.model,provider=config.provider,
                     configuration=config.public_settings())
     records,checks,scores,traces={},{},{},{}
-    for side,agent in (("baseline",MetaBaselineAgent()),("muse",MuseModelAgent())):
+    api_key=os.environ["MUSE_MODEL_API_KEY"]
+    agents=(
+        ("baseline",MetaBaselineAgent(ChatCompletionsClient(config,api_key))),
+        ("muse",MuseModelAgent(ChatCompletionsClient(config,api_key))),
+    )
+    for side,agent in agents:
         records[side],checks[side],scores[side],traces[side]=[],[],[],[]
         for original in selected:
             scenario=deepcopy(original)
