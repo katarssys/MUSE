@@ -208,7 +208,7 @@ Evidence → Consistency → Policy → Action → Receipt → Readback → Verd
 Run it locally from the repository root:
 
 ```powershell
-& "C:\Users\katya\AppData\Local\Python\bin\python.exe" -m http.server 8080 -d demo
+python -m http.server 8080 -d demo
 ```
 
 Then open:
@@ -345,7 +345,7 @@ budgets/evaluator, and neither branches on expected labels or scenario IDs.
 ReferencePolicy is an infrastructure wrapper only. All 14 scenarios are public,
 synthetic development fixtures; no held-out or Meta/LLM capability claim.
 
-See HANDOFF_REPORT.md for test names, A–J perturbations, per-scenario outcomes and
+See [the internal handoff report](docs/internal/HANDOFF_REPORT.md) for test names, A–J perturbations, per-scenario outcomes and
 remaining limitations. OS sandbox, live APIs and model integration are out of scope.
 
 ## Model adapter stage (separate from frozen P0.2)
