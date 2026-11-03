@@ -54,6 +54,7 @@ class ModelAdapterTests(unittest.TestCase):
         self.assertEqual(config.family,'meta_muse')
         self.assertEqual(config.model,'muse-spark-1.3')
         self.assertEqual(config.provider,'Meta Model API')
+        self.assertEqual(config.request_timeout_s,30.0)
         for family in ('meta_llama','meta_muse'):
             with self.subTest(family=family),self.assertRaises(ValueError):
                 replace(TEST_CONFIG,provider='',family=family)
