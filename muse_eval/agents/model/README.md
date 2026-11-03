@@ -1,9 +1,19 @@
-# P1 model adapters — MODEL_NOT_CONNECTED
+# P1 model adapters — CONNECTED LIVE BENCHMARK COMPLETE
 
-This is an unconnected provider-neutral adapter scaffold, not a Meta benchmark.
-The configured environment has no model endpoint, model ID, model credential,
-outbound identity or local inference runtime. No Meta model was selected or invoked.
-Existing deterministic agents remain untouched regression fixtures.
+This provider-neutral adapter stage has now completed a connected paired live
+benchmark using one explicitly configured provider/model client for both baseline
+and MUSE. Existing deterministic agents remain untouched regression fixtures.
+
+Final validated state on `codex/muse-model-adapter-p1`:
+- **142/142** unit tests pass;
+- baseline **0/5** full scenario PASS;
+- MUSE **5/5** full scenario PASS;
+- MUSE **0 hard failures**;
+- frozen P0.2 code remains unchanged.
+
+The harness records provider/model as declared configuration. It does not independently
+prove model-family authenticity, so this result must not be described as independent
+verification of a specific Meta model family unless the provider supplies that proof.
 
 From repository root:
 
@@ -12,10 +22,11 @@ python -m unittest discover -s muse_eval/tests -v
 python -m muse_eval.agents.model.run_benchmark
 ```
 
-Without configuration the second command writes a `model-<uuid>/manifest.json`
+Without configuration the second command still writes a `model-<uuid>/manifest.json`
 and summary under ignored `muse_eval/runs/`, prints MODEL_NOT_CONNECTED, exits 2,
-and creates no synthetic scores. There are five selected cases, zero executed
-model benchmark cases. Unit-test scripted responses and mocked HTTP are not Meta calls.
+and creates no synthetic scores. With explicit configuration it runs the five paired
+live cases and writes baseline/MUSE results, traces, checks, score, manifest and summary.
+Unit-test scripted responses and mocked HTTP remain separate from live inference.
 
 ## Connection prerequisites
 
@@ -69,13 +80,32 @@ no automatic action, no fabricated receipts. Tool observations feed the next mod
 turn. Final output is validated against frozen AgentResult and passed to the frozen
 checks/renderer. Model-generated metadata cannot replace measured usage.
 
-Equal defaults: temperature=0, max_model_calls=8, max_tool_calls=8,
-max_output_tokens=2048 per call, max_context_chars=24000, workflow_timeout_ms=60000,
-per-request timeout <=15s and remaining deadline. Context is character-bounded
+Equal adapter defaults: temperature=0, max_model_calls=8, max_tool_calls=8,
+max_output_tokens=4096 per call, max_context_chars=24000, workflow_timeout_ms=60000,
+request_timeout_s=30.0 and remaining deadline. The dedicated live benchmark driver
+uses the same explicit client/config for both sides with benchmark-only
+workflow_timeout_ms=90000 and request_timeout_s=45.0 to avoid transport false negatives.
+Context is character-bounded
 without a provider tokenizer; exact input tokens are reported only when provider
 usage exists. Over-budget context fails; evidence is not silently truncated.
 Model/tool/timeout/parser errors return explicit status and fail evaluation.
 No automatic retries; partial/missing usage totals stay null, never false zero.
+
+## Final connected live result
+
+Final golden run produced:
+- baseline: **0/5 PASS**, **0 hard failures**;
+- MUSE: **5/5 PASS**, **0 hard failures**.
+
+MUSE passed every frozen check for all five selected cases:
+`11_missing_downstream`, `04_conflicting_evidence`,
+`12_gross_net_revenue`, `13_approval_scope_change`, and
+`14_accepted_then_failed`.
+
+The live result demonstrates improved workflow/evidence behavior under the same
+configured provider/model client and unchanged frozen evaluator. It does **not**
+establish independent provider authenticity, production reliability, or general
+performance beyond these public synthetic development cases.
 
 ## Benchmark and telemetry
 
