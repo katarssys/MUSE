@@ -24,16 +24,19 @@ FINAL_SCHEMA={"type":"object","additionalProperties":False,"properties":{
     "approval_state":{"type":"string","enum":["not_required","pending","approved"]},"decision_summary":{"type":"string"}},
     "required":["outcome","evidence","actions","approval_state","decision_summary"]}
 
-def decision_schema(available_tools):
+def decision_schema(available_tools, *, allow_final=True):
     # Both agents receive exactly the same discriminated output schema.
+    # The first live decision can be narrowed to tool-only when tools exist;
+    # after an observation, finalization becomes available again.
     branches=[]
     for name in available_tools:
         parameters=TOOL_SPECS[name]["parameters"]
         args={"type":"object","additionalProperties":False,"properties":{k:{"type":v} for k,v in parameters.items()},"required":list(parameters)}
         branches.append({"type":"object","additionalProperties":False,"properties":{
             "kind":{"type":"string","enum":["tool"]},"tool":{"type":"string","enum":[name]},"args":args},"required":["kind","tool","args"]})
-    branches.append({"type":"object","additionalProperties":False,"properties":{
-        "kind":{"type":"string","enum":["final"]},"result":FINAL_SCHEMA},"required":["kind","result"]})
+    if allow_final or not branches:
+        branches.append({"type":"object","additionalProperties":False,"properties":{
+            "kind":{"type":"string","enum":["final"]},"result":FINAL_SCHEMA},"required":["kind","result"]})
     return {"type":"object","additionalProperties":False,
             "properties":{"decision":{"anyOf":branches}},"required":["decision"]}
 
@@ -48,7 +51,7 @@ def _no_duplicates(pairs):
         obj[k]=v
     return obj
 
-def parse_decision(response,available_tools):
+def parse_decision(response,available_tools, *, allow_final=True):
     try:
         if response.structured_output is not None:
             value=json.loads(json.dumps(response.structured_output,allow_nan=False),object_pairs_hook=_no_duplicates)
@@ -68,7 +71,7 @@ def parse_decision(response,available_tools):
                 if t=="number" and (type(args[k]) not in (int,float) or args[k]<=0):raise InvalidModelOutput("MODEL_OUTPUT_INVALID")
             return deepcopy(value)
         _strict_keys(value,{"kind","result"})
-        if value["kind"]!="final":raise InvalidModelOutput("MODEL_OUTPUT_INVALID")
+        if value["kind"]!="final" or not allow_final:raise InvalidModelOutput("MODEL_OUTPUT_INVALID")
         data=value["result"]
         _strict_keys(data,{"outcome","evidence","actions","approval_state","decision_summary"})
         if data['outcome'] not in OUTCOMES or data['approval_state'] not in {'not_required','pending','approved'}:

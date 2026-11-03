@@ -94,6 +94,10 @@ class ModelAdapterTests(unittest.TestCase):
         self.assertEqual(result.outcome,'insufficient_data')
         validate_result(asdict(result))
         self.assertIn('tool_observation',client.inputs[1][0][-1]['content'])
+        first_kinds=[b['properties']['kind']['enum'] for b in client.inputs[0][1]['properties']['decision']['anyOf']]
+        second_kinds=[b['properties']['kind']['enum'] for b in client.inputs[1][1]['properties']['decision']['anyOf']]
+        self.assertNotIn(['final'],first_kinds)
+        self.assertIn(['final'],second_kinds)
         telemetry=result.metadata['model_telemetry']
         self.assertEqual(telemetry['model_call_count'],2)
         self.assertEqual(telemetry['tool_call_count'],1)

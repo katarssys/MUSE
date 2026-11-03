@@ -35,7 +35,7 @@ class ModelAgent:
             return finish(AgentResult("",outcome="error"),"MODEL_CONFIGURATION_INVALID")
         config=client.config
         allowed=[name for name in context.available_tools if name in TOOL_SPECS]
-        schema=decision_schema(allowed)
+        public_schema=decision_schema(allowed)
         guard=OrchestrationGuard(allowed)
         usage["orchestration_rejections"]=0
         usage["orchestration_feedback_codes"]=[]
@@ -59,10 +59,12 @@ class ModelAgent:
             if isinstance(value,list):return [observation_view(v) for v in value]
             return value
         public={"user_request":context.user_request,"initial_state":public_state,
-                "available_tools":{name:TOOL_SPECS[name] for name in allowed},"output_schema":schema,
+                "available_tools":{name:TOOL_SPECS[name] for name in allowed},"output_schema":public_schema,
                 "limits":{"max_model_calls":config.max_model_calls,"max_tool_calls":config.max_tool_calls}}
         messages=[{"role":"system","content":self.system_prompt},{"role":"user","content":json.dumps(public,allow_nan=False)}]
         for _ in range(config.max_model_calls):
+            allow_final=usage['tool_call_count']>0 or not allowed
+            schema=decision_schema(allowed,allow_final=allow_final)
             remaining=config.workflow_timeout_ms/1000-(perf_counter()-started)
             if remaining<=0:return finish(AgentResult("",outcome="error"),"MODEL_TIMEOUT")
             if len(json.dumps(messages))>config.max_context_chars:
@@ -89,7 +91,7 @@ class ModelAgent:
             else:usage['estimated_cost']=None
             if perf_counter()-started>config.workflow_timeout_ms/1000:
                 return finish(AgentResult("",outcome="error"),"MODEL_TIMEOUT")
-            try:decision=parse_decision(response,allowed)
+            try:decision=parse_decision(response,allowed,allow_final=allow_final)
             except InvalidModelOutput:
                 return finish(AgentResult("",outcome="error"),"MODEL_OUTPUT_INVALID")
             rejected=guard.rejection(decision)
