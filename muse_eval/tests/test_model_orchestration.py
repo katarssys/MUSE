@@ -68,7 +68,7 @@ class ModelOrchestrationTests(unittest.TestCase):
         self.assertIn('unrelated reads merely to avoid insufficient_data',MUSE_SYSTEM)
         self.assertIn('validity, sufficiency, status, resource identity and state fields',MUSE_SYSTEM)
         self.assertIn('Before a campaign budget proposal',MUSE_SYSTEM)
-        self.assertIn('later readback explicitly reports failure is verification_failed',MUSE_SYSTEM)
+        self.assertIn('readback explicitly reports failure is verification_failed',MUSE_SYSTEM)
         self.assertNotIn('Stop as soon as the observations already support a terminal decision',BASELINE_SYSTEM)
         self.assertNotIn('Before a campaign budget proposal',BASELINE_SYSTEM)
         self.assertNotIn('Do not finalize insufficient_data before',BASELINE_SYSTEM)
