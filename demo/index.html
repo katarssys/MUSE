@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MUSE — Verification Control Plane</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <div class="eyebrow">META GLOBAL AI DEVELOPER HACKATHON</div>
+        <h1>MUSE</h1>
+        <p>Verification control plane for agentic systems</p>
+      </div>
+      <div class="core-pill">EVIDENCE → POLICY → ACTION → READBACK</div>
+    </header>
+    <section class="grid">
+      <aside class="panel sidebar">
+        <div class="section-label">DOMAINS</div>
+        <nav id="domainNav"></nav>
+        <div class="divider"></div>
+        <div class="section-label">SHARED CORE</div>
+        <ul class="core-list">
+          <li>Evidence integrity</li><li>Scoped approvals</li><li>Idempotency</li><li>Authoritative readback</li>
+        </ul>
+      </aside>
+      <section class="panel workspace">
+        <div class="workspace-head">
+          <div><div class="section-label">USER INTENT</div><h2 id="intent"></h2></div>
+          <span id="statusBadge" class="status-badge"></span>
+        </div>
+        <div id="pipeline" class="pipeline"></div>
+        <div class="decision-card">
+          <div class="section-label">MUSE DECISION</div>
+          <div id="decisionTitle" class="decision-title"></div>
+          <p id="decisionCopy"></p>
+        </div>
+      </section>
+      <aside class="panel proof">
+        <div class="section-label">LIVE PROOF</div>
+        <div class="score-card baseline"><span>Baseline</span><strong>0 / 5</strong></div>
+        <div class="score-card muse"><span>MUSE</span><strong>5 / 5</strong></div>
+        <div class="metric"><span>Regression suite</span><strong>176 / 176</strong></div>
+        <div class="metric"><span>Hard failures</span><strong>0</strong></div>
+        <div class="divider"></div>
+        <div class="section-label">ONE ENGINE</div>
+        <p class="muted">Marketing · E-commerce · DevOps · Mechanical Engineering</p>
+        <div class="footer-note">Synthetic domain proofs. Live paired model benchmark uses the frozen evaluator.</div>
+      </aside>
+    </section>
+  </main>
+  <script src="./demo-data.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
