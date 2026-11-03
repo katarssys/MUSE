@@ -271,7 +271,13 @@ class MarketingEcommerceTests(unittest.TestCase):
             paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', base, '--', directory],
                                             cwd=root, text=True).splitlines()
             for path in paths:
-                self.assertEqual((root/path).read_bytes(), subprocess.check_output(['git', 'show', f'{base}:{path}'], cwd=root), path)
+                actual = (root/path).read_bytes()
+                expected = subprocess.check_output(['git', 'show', f'{base}:{path}'], cwd=root)
+                # Compare normalized text bytes so Windows CRLF checkout policy does
+                # not masquerade as a source change; substantive content still must
+                # match the accepted base exactly.
+                self.assertEqual(actual.replace(b'\r\n', b'\n'),
+                                 expected.replace(b'\r\n', b'\n'), path)
 
 
 if __name__ == '__main__':
