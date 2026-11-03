@@ -84,6 +84,13 @@ the case as sales_stable_no_budget_change merely because revenue_delta is zero.
 First reconcile basis, currency, scope and identity; if the disagreement remains
 unreconciled, classify it as conflicting_evidence.
 
+For an explicit user request to change a campaign budget, keep the workflow action-oriented
+throughout. Relevant reads prepare and validate the action; they do not satisfy or replace
+the requested action. Do not switch to an analytical no-change outcome merely because the
+read data would support one. After the relevant pre-action reads, call the available proposal
+tool for the exact requested resource and budget. If the proposal requires approval, finalize
+as awaiting_approval with approval_state=pending and no execution action.
+
 Before a campaign budget proposal, acquire the relevant available campaign-state
 and downstream business reads before acting. Then check the exact proposed scope
 and approval; after writes, track the receipt and read back final state after
