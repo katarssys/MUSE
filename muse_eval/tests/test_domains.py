@@ -158,4 +158,9 @@ class DomainTests(unittest.TestCase):
             for name in tracked.splitlines():
                 with self.subTest(path=name):
                     expected = subprocess.check_output(['git', 'show', f'{base}:{name}'], cwd=root)
-                    self.assertEqual((root / name).read_bytes(), expected)
+                    actual = (root / name).read_bytes()
+                    # Git stores text with LF while Windows checkouts may materialize
+                    # CRLF. Preserve content-integrity checking without treating an
+                    # EOL-only checkout transformation as a source modification.
+                    self.assertEqual(actual.replace(b'\r\n', b'\n'),
+                                     expected.replace(b'\r\n', b'\n'))
