@@ -39,6 +39,9 @@ class ModelAgent:
         guard=OrchestrationGuard(allowed)
         usage["orchestration_rejections"]=0
         usage["orchestration_feedback_codes"]=[]
+        usage["orchestration_events"]=[]
+        usage["orchestration_finalization_after_feedback"]=False
+        feedback_at_observation=None
         # Public development IDs contain scenario names; use opaque aliases so neutral
         # prompts do not accidentally reveal task families through workflow/receipt IDs.
         aliases={}
@@ -93,12 +96,24 @@ class ModelAgent:
             if rejected:
                 usage['orchestration_rejections']+=1
                 usage['orchestration_feedback_codes'].append(rejected)
+                # Only tool events introduce new observations. Changing the rejected
+                # decision/reason alone cannot renew the feedback allowance.
+                no_progress=feedback_at_observation==usage['tool_call_count']
+                terminal=no_progress or usage['model_call_count']>=config.max_model_calls
+                usage['orchestration_events'].append({
+                    'code':rejected,'no_progress':no_progress,
+                    'tool_event_count':usage['tool_call_count'],
+                    'feedback_sent':not terminal,'blocked':terminal})
+                if terminal:
+                    return finish(AgentResult("",outcome="error"),"MODEL_ORCHESTRATION_BLOCKED")
+                feedback_at_observation=usage['tool_call_count']
                 messages.append({'role':'user','content':json.dumps({'protocol_feedback':{
                     'code':rejected,'instruction':FEEDBACK[rejected]},'remaining_limits':{
                     'model_calls':config.max_model_calls-usage['model_call_count'],
                     'tool_calls':config.max_tool_calls-usage['tool_call_count']}})})
                 continue
             if decision['kind']=='final':
+                usage['orchestration_finalization_after_feedback']=bool(usage['orchestration_rejections'])
                 final=decision['result']
                 for action in final.actions:
                     action['receipt_ref']=aliases.get(action['receipt_ref'],action['receipt_ref'])

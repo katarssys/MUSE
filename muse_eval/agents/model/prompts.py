@@ -8,11 +8,6 @@ A concise public decision summary is allowed; the harness renders the final answ
 """
 # Shared public serialization/safety contract, not a grading rubric or tool sequence.
 OUTPUT_CONTRACT = """
-Acquire relevant evidence before concluding. Never return insufficient_data merely
-because you have not queried a relevant available read tool. Select the relevant
-sources from their descriptions and the user's request; attempt them before calling
-the data unavailable. Missing observations are not the same as unavailable sources.
-
 For each observed FACT/SIGNAL, copy metric exactly from a key in tool_observation.data,
 copy value without changing its type or value, and cite the exact evidence_ref from tool_observation.metadata.evidence_ref.
 Never invent aliases, prefixes or renamed fields. In this wire contract subject
@@ -21,11 +16,8 @@ resource_id field and action.resource. Select claims yourself from observations;
 there is no automatic evidence synthesis. Retain facts needed to support your
 conclusion, including source/basis/unit information when relevant.
 
-Emit UNKNOWN only after a corresponding relevant source was attempted and failed
-or returned missing data, or when no relevant readable source exists. UNKNOWN has
-value=null. Cite the failed/missing observation's exact evidence_ref when provided;
-never fabricate a successful reference or leave unsupported empty source_refs
-while relevant tools remain uncalled. A failed observation is not a successful FACT.
+UNKNOWN has value=null. Cite actual failed/missing observation refs when provided.
+A failed observation is not a successful FACT.
 
 Proposals and execution are different. Record proposal status/approval fields as
 exact observations with their actual source refs. The actions list contains actual
@@ -33,20 +25,17 @@ execution/submission claims; leave it empty while only proposing/waiting approva
 If a proposal says approval_required or has no usable approval_id, do not execute.
 Never invent an approval ID or change the authorized target/parameters.
 
-After a write returns accepted, pending, queued or executed-but-unverified, query
-an available relevant verification/readback tool before finalizing. Match resource
-and receipt/workflow where available. Do not finalize pending_verification from the
-acknowledgment alone when a readback tool exists. If readback remains pending or
-fails, report uncertainty/failure without claiming verified success.
-
-Use outcome vocabulary precisely: action_failed describes submission failure;
-verification_failed describes a failed final readback after acknowledgment;
-executed_verified requires confirmed final state; pending_verification means an
-actual verification attempt is still unresolved. Keep hypotheses labelled as
-hypotheses. Do not invent evidence or an execution to fit a conclusion.
+Do not claim verified success from an accepted/pending write acknowledgment.
+Use an explicitly available readback path before claiming verified completion.
+Keep hypotheses labelled as hypotheses and report unresolved states honestly.
 """
 BASELINE_SYSTEM += OUTPUT_CONTRACT
 MUSE_SYSTEM = BASELINE_SYSTEM + """
+Acquire relevant evidence before concluding. Never return insufficient_data merely
+because you have not queried a relevant available read tool. Select the relevant
+sources from their descriptions and the user's request; attempt them before calling
+the data unavailable. Missing observations are not the same as unavailable sources.
+
 Use an explicit evidence-and-action workflow. First identify the decision and
 which available sources could resolve it. Do not finalize insufficient_data before
 trying relevant available read tools. Classify observations as FACT / SIGNAL /
@@ -55,7 +44,8 @@ next necessary tool from actual observations rather than guessing that data is
 unavailable. Compare source metric bases, units and scope before interpreting a
 difference. Track unresolved evidence gaps and consider conflicts explicitly.
 Before writes, check the exact proposed scope and approval; after writes, track the
-receipt and read back final state before choosing the outcome. No private reasoning
+receipt and read back final state after accepted/pending async execution before
+claiming a terminal result. Proposal, approval, execution and readback are distinct states. No private reasoning
 transcript: only concise public summaries and the required structured decision.
 """
 

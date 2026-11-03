@@ -1,3 +1,62 @@
+# P1.2: narrow safety enforcement and bound feedback without progress
+
+Base: e4b01467b115cdb7866cfde43b8b181de613bb51 on codex/muse-model-adapter-p1.
+
+Root cause: P1.1 shared semantic checks repeatedly rejected final decisions without
+new tool observations, consuming the model budget while supplying no new evidence.
+
+Changes:
+- Removed read-before-insufficiency, UNKNOWN empty-ref, exact metric/value/type/source
+  completeness and proposal-only action rejections. They remain prompt guidance;
+  no JSON/claim repair or evaluator change was introduced.
+- Retained authorization/approval/scope and nonexistent evidence-ref safety checks.
+  A write whose contract requires proposal authorization is blocked even when its
+  proposal tool is unavailable; no permission is inferred from missing capability.
+- Narrowed readback blocking to verified-success claims after an unverified write
+  with a known verification path. Honest imperfect/pending finals may be returned.
+- One feedback allowance per tool-event/observation state. Another unsafe decision
+  without a tool event, even with a different rejection code, terminates immediately
+  as MODEL_ORCHESTRATION_BLOCKED; unsafe writes/refs are never permitted by retry
+  exhaustion. A rejection on the last available call also terminates with that
+  status. New tool observations renew the allowance; limits remain unchanged.
+- Shared baseline instructions cover wire format and safety. Evidence acquisition,
+  coverage planning and explicit multi-state workflow are MUSE-specific guidance.
+- Stable JSON telemetry lives in result.metadata.model_telemetry (also serialized
+  in benchmark result records): orchestration_rejections, orchestration_feedback_codes,
+  orchestration_events (code, no_progress, tool_event_count, feedback_sent, blocked),
+  orchestration_finalization_after_feedback. No private reasoning is recorded.
+
+Exact changed files:
+- muse_eval/agents/model/loop.py
+- muse_eval/agents/model/orchestration.py
+- muse_eval/agents/model/prompts.py
+- muse_eval/tests/test_model_orchestration.py
+- HANDOFF_REPORT.md
+
+Validation actually run:
+- python -m unittest discover -s muse_eval/tests -p test_model_orchestration.py -v:
+  26 passed, 0 failed (0.070s).
+- python -m unittest discover -s muse_eval/tests -v:
+  130 passed, 0 failed, 0 skipped (4.623s). Linux equivalent of requested py command.
+- git diff --check: PASS.
+- Frozen 38 files compared as raw bytes against da2ff0b: all identical.
+- base.py (config), provider.py (framing), parser.py (schema/semantic checks) are
+  raw-byte-identical to e4b0146. Default max_model_calls remains 8.
+
+Regressions cover repeated invalid refs and unsafe writes, changing rejection codes
+without observation progress, last-call rejection, renewed allowance after tool
+observation, safe imperfect finalization, baseline ordinary multi-tool async readback,
+MUSE prompt separation, metric alias preservation without rejection/repair, pending
+finals without fabricated success, approval and scope safety, same config/schema/tools,
+JSON-exported telemetry, unchanged frozen files and absence of scenario lookups.
+No scenario IDs, expected-answer mappings, predicates or fixture-specific production
+logic were added. No live API calls were made and no benchmark uplift is claimed.
+Publication is authorized as a normal non-force push; outcome reported separately.
+
+Earlier reports below are historical.
+
+---
+
 # P1.1 integration onto current remote
 
 - Replayed validated c559636a48e462126d743ef4d790a048a7dfcbf5 onto
