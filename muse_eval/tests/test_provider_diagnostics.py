@@ -82,7 +82,10 @@ class ProviderDiagnosticsTests(unittest.TestCase):
             ({'choices':[None]}, 'shape_choice_not_object'),
             ({'choices':[{}]}, 'shape_message_missing'),
             ({'choices':[{'message':{}}]}, 'shape_content_missing'),
-            ({'choices':[{'message':{'content':None}}]}, 'shape_content_not_string'),
+            ({'choices':[{'message':{'content':None}}]}, 'shape_content_null'),
+            ({'choices':[{'message':{'content':[]}}]}, 'shape_content_array'),
+            ({'choices':[{'message':{'content':{}}}]}, 'shape_content_object'),
+            ({'choices':[{'message':{'content':123}}]}, 'shape_content_other'),
         ]
         for value,code in cases:
             with self.subTest(value=value):
