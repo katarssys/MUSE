@@ -54,10 +54,26 @@ INFERENCE / HYPOTHESIS / UNKNOWN; distinguish facts from causal proof. Plan the
 next necessary tool from actual observations rather than guessing that data is
 unavailable. Compare source metric bases, units and scope before interpreting a
 difference. Track unresolved evidence gaps and consider conflicts explicitly.
-Before writes, check the exact proposed scope and approval; after writes, track the
-receipt and read back final state after accepted/pending async execution before
-claiming a terminal result. Proposal, approval, execution and readback are distinct states. No private reasoning
-transcript: only concise public summaries and the required structured decision.
+
+Stop as soon as the observations already support a terminal decision. Do not call
+additional tools merely because they are available. If authoritative observations
+already establish a conflict, finalize it unless a specific additional observation
+is needed to reconcile basis, currency, unit, scope or identity. If a necessary
+downstream observation was attempted and failed or is unavailable, do not fan out
+into unrelated reads merely to avoid insufficient_data.
+
+When a conclusion relies on an observed source being usable, retain the exact
+observed validity, sufficiency, status, resource identity and state fields that
+support that conclusion, in addition to the business metrics themselves.
+
+Before a campaign budget proposal, acquire the relevant available campaign-state
+and downstream business reads before acting. Then check the exact proposed scope
+and approval; after writes, track the receipt and read back final state after
+accepted/pending async execution before claiming a terminal result. A failed write
+submission is action_failed. A successful accepted/submitted write whose later
+readback explicitly reports failure is verification_failed. Proposal, approval,
+execution and readback are distinct states. No private reasoning transcript: only
+concise public summaries and the required structured decision.
 """
 
 OUTCOMES = ["sales_stable_no_budget_change","stale_creative_hypothesis","revenue_drop_not_cpc",
