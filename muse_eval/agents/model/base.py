@@ -50,7 +50,7 @@ class ModelConfig:
     endpoint: str
     family: str = "meta_llama"
     temperature: float = 0.0
-    max_output_tokens: int = 2048
+    max_output_tokens: int = 4096
     max_model_calls: int = 8
     max_tool_calls: int = 8
     max_context_chars: int = 24000
