@@ -22,6 +22,8 @@ class ModelProviderError(RuntimeError):
         "shape_choices_empty", "shape_choice_not_object", "shape_message_missing",
         "shape_content_missing", "shape_content_not_string", "shape_content_null",
         "shape_content_array", "shape_content_object", "shape_content_other",
+        "shape_content_null_length", "shape_content_null_tool_calls",
+        "shape_content_null_content_filter", "shape_content_null_stop", "shape_content_null_other",
     })
 
     SAFE_CATEGORIES = frozenset({
