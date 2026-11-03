@@ -581,3 +581,40 @@ Commit cannot embed its own SHA; do not substitute a guessed value.
    protocol results separate from Meta/MUSE measurements.
 
 Stopped after the requested no-access fallback; next stage not begun.
+
+
+## DevOps and Mechanical synthetic domain proof
+
+Branch: `codex/muse-domains-devops-mechanical`.
+Starting HEAD: `951237878d0fd225b4b072f51692afe637fa9c5e`.
+Read and implemented `CODEX_DEVOPS_MECHANICAL.md` without modifying its brief.
+
+Added `muse_eval/domains/__init__.py`, `contract.py`, `devops.py`,
+`mechanical.py`, `README.md`, and `muse_eval/tests/test_domains.py`.
+This report is the only existing tracked file changed.
+
+One declarative contract and a shared synthetic workflow enforce exact approval
+scope, required evidence, in-memory idempotency and receipt/resource/readback
+correlation. Acceptance remains pending until authoritative readback verifies
+requested state. Latest unsafe readback overrides previous success. Four required
+DevOps/Mechanical cases and ten contract/negative/independence/integrity tests run.
+A third inventory contract demonstrates extension without engine dispatch.
+
+Validation from `/workspace/MUSE`:
+- Before implementation: `python -m unittest discover -s muse_eval/tests -v`:
+  142 tests, OK, exit 0, 6.917 seconds.
+- Final implementation run of the same full command: 156 tests, OK, exit 0,
+  7.564 seconds; 0 failures, 0 errors, 0 skipped.
+- Initial expanded run found one overly broad new AST test rejecting contract
+  name validation. Scoped that assertion to the generic workflow engine; no
+  implementation behavior or existing assertion was changed to accommodate it.
+- Frozen/P1 byte-integrity test passes against the full starting commit.
+- Git diff against starting commit has no changes under harness, task/scenarios,
+  schemas, connectors, baseline, candidate or agents/model. Existing five-case
+  benchmark semantics, prompts, orchestration, loop and parser are untouched.
+
+Synthetic-only standalone proof; not connected to live model benchmarks or real
+Kubernetes/cloud/PLC/SCADA/sensors/equipment. No live benchmark rerun was performed.
+Evidence sufficiency and approvals are trusted synthetic inputs. The ledger is
+sequential/in-memory without durable, concurrent or expiring authorization semantics.
+No claim of real mechanical safety. See domains/README.md for extension limits.
